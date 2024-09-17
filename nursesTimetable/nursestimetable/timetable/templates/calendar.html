@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간호사 근무표</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles/calendar.css' %}">
+</head>
+<body>
+    <h1>간호사 근무표 - 2024년 10월</h1>
+    <table class="calendar">
+        <thead>
+            <tr>
+                <th>일</th>
+                <th>월</th>
+                <th>화</th>
+                <th>수</th>
+                <th>목</th>
+                <th>금</th>
+                <th>토</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in schedule %}
+                <tr>
+                    {% for day in week %}
+                        <td>
+                            <strong>{{ day.date }}</strong><br>
+                            {% for shift in day.shifts %}
+                                {{ shift.nurse.name }}: {{ shift.shift }}<br>
+                            {% endfor %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<h1>간호사 목록</h1>
+<ul>
+    {% for nurse in nurses %}
+        <li>
+            {{ nurse.name }} ({{ nurse.is_senior|yesno:"사수,부사수" }})
+            <a href="{% url 'nurse_delete' nurse.pk %}">삭제</a>
+        </li>
+    {% endfor %}
+</ul>

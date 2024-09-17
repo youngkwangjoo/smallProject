@@ -1,0 +1,16 @@
+<table>
+    <tr>
+        <th>날짜</th>
+        <th>간호사</th>
+        <th>근무 타입</th>
+    </tr>
+    {% for day in schedule %}
+        <tr>
+            <td>{{ day.date }}</td>
+            {% for shift in day.shifts %}
+                <td>{{ shift.nurse.name }}</td>
+                <td>{{ shift.shift }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>

@@ -1,0 +1,8 @@
+<h1>간호사 삭제</h1>
+<p>정말로 {{ object.name }} 간호사를 삭제하시겠습니까?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">삭제</button>
+    <a href="{% url 'nurse_list' %}">취소</a>
+</form>
