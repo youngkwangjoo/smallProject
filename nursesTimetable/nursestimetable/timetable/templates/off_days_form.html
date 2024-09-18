@@ -1,0 +1,5 @@
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">스케줄 생성</button>
+</form>

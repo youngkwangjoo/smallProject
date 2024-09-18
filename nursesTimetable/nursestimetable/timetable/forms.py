@@ -5,3 +5,6 @@ class NurseForm(forms.ModelForm):
     class Meta:
         model = Nurse
         fields = ['name', 'is_senior', 'leave_days']
+
+class OffDaysForm(forms.Form):
+    total_off_days = forms.IntegerField(label="총 Off Day 수", min_value=0)

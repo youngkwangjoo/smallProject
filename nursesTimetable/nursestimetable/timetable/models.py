@@ -4,6 +4,7 @@ class Nurse(models.Model):
     name = models.CharField(max_length=100)  # 간호사 이름
     is_senior = models.BooleanField(default=False)  # 사수 여부
     leave_days = models.ManyToManyField('LeaveDay', blank=True)  # 연차일
+    junior = models.ForeignKey('self', null=True, blank=True, related_name='seniors', on_delete=models.SET_NULL)
 
 class LeaveDay(models.Model):
     date = models.DateField()  # 연차 날짜
@@ -24,3 +25,4 @@ class Shift(models.Model):
     nurse = models.ForeignKey(Nurse, on_delete=models.CASCADE)  # 근무 간호사
     date = models.DateField()  # 근무 날짜
     shift_type = models.CharField(max_length=10, choices=SHIFT_CHOICES)  # 근무 종류
+
