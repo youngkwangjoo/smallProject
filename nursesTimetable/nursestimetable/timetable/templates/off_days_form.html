@@ -1,5 +1,7 @@
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
+    <label for="total_work_days">근무일 수:</label>
+    <input type="number" name="total_work_days" id="total_work_days" min="0" required>
     <button type="submit">스케줄 생성</button>
 </form>

@@ -6,7 +6,7 @@ from .utils import assign_shifts
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView
 from .forms import OffDaysForm
-from django.shortcuts import render
+import random  # 랜덤 페어링을 위해 import
 
 def nurse_input(request):
     if request.method == 'POST':
@@ -20,39 +20,42 @@ def nurse_input(request):
     return render(request, 'nurse_input.html', {'form': form})
 
 def generate_schedule(request):
-    nurses = Nurse.objects.all()  # 간호사 리스트 가져오기
-    start_date = date(2024, 10, 1)  # 예시 시작 날짜
-    end_date = date(2024, 10, 30)  # 예시 종료 날짜
+    nurses = Nurse.objects.all()
+    start_date = date(2024, 10, 1)
+    end_date = date(2024, 10, 30)
 
-    # 공휴일 리스트 (예시)
     holidays = [
-        date(2024, 10, 1),  # 예시 공휴일
-        date(2024, 10, 5),  # 예시 공휴일
+        date(2024, 10, 1),
+        date(2024, 10, 5),
     ]
 
-    # 사수-부사수 페어 설정
-    senior_junior_pairs = []
-    for nurse in nurses:
-        if nurse.junior:  # junior가 있는 경우만 추가
-            senior_junior_pairs.append((nurse, nurse.junior))
-    
-    # senior_junior_pairs가 비어 있는지 확인
-    if not senior_junior_pairs:
-        print("경고: 사수-부사수 페어가 존재하지 않습니다.")
-    
-    # 연차일 정보 준비 (예시)
+    # vacation_days 설정
     vacation_days = {}
     for nurse in nurses:
         vacation_days[nurse.id] = [leave_day.date for leave_day in nurse.leave_days.all()]
 
     if request.method == 'POST':
-        form = OffDaysForm(request.POST)  # 폼을 통해 전달된 off day 값 받기
+        form = OffDaysForm(request.POST)
         if form.is_valid():
-            total_off_days = form.cleaned_data['total_off_days']  # 입력된 총 off day 값
-            # 변경된 assign_shifts 호출
-            schedule = assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, vacation_days, total_off_days)
+            total_off_days = form.cleaned_data['total_off_days']
+            total_work_days = form.cleaned_data['total_work_days']  # 근무일 수 가져오기
+            
+            # 사수-부사수 페어링을 동적으로 처리 (랜덤 페어링)
+            seniors = [nurse for nurse in nurses if nurse.is_senior]
+            juniors = [nurse for nurse in nurses if not nurse.is_senior]
+            senior_junior_pairs = []
 
-            # 매주 한 줄씩 달력에 넣기
+            # 페어링이 필요한 만큼 랜덤으로 사수와 부사수를 짝짓기
+            while juniors and seniors:
+                junior = random.choice(juniors)
+                senior = random.choice(seniors)
+                senior_junior_pairs.append((senior, junior))
+                juniors.remove(junior)
+                seniors.remove(senior)
+
+            # assign_shifts로 스케줄 생성
+            schedule = assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, vacation_days, total_off_days, total_work_days)
+
             weeks = []
             week = []
             for day_schedule in schedule:
@@ -65,9 +68,9 @@ def generate_schedule(request):
 
             return render(request, 'calendar.html', {'schedule': weeks})
     else:
-        form = OffDaysForm()  # GET 요청 시 빈 폼 생성
+        form = OffDaysForm()
 
-    return render(request, 'off_days_form.html', {'form': form})  # 폼을 템플릿으로 전달
+    return render(request, 'off_days_form.html', {'form': form})
 
 def nurse_list(request):
     nurses = Nurse.objects.all()
@@ -77,5 +80,3 @@ class NurseDeleteView(DeleteView):
     model = Nurse
     template_name = 'nurse_confirm_delete.html'
     success_url = reverse_lazy('nurse_list')  # 삭제 후 리다이렉트할 URL
-
-

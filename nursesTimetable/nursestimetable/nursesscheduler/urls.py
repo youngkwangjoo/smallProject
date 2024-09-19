@@ -1,10 +1,7 @@
-from django.urls import path
-from timetable.views import NurseDeleteView  # 'scheduler' 앱의 views 모듈에서 NurseDeleteView를 가져옵니다.
-from timetable import views
+from django.contrib import admin
+from django.urls import path, include
 
 urlpatterns = [
-    path('nurses/', views.nurse_input, name='nurse_input'),
-    path('nurses/list/', views.nurse_list, name='nurse_list'),
-    path('schedule/', views.generate_schedule, name='generate_schedule'),
-    path('nurses/delete/<int:pk>/', NurseDeleteView.as_view(), name='nurse_delete'),
+    path('admin/', admin.site.urls),  # 관리자 페이지
+    path('nurses/', include('timetable.urls')),  # timetable 앱의 URL 패턴 포함
 ]
