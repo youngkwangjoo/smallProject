@@ -44,6 +44,7 @@ def assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, v
                 return False  # day와 evening은 불가
             if (current_date - status['last_off_day']).days == 0:  # 같은 날 night 근무 가능
                 return True
+
         # 이브닝 근무 후 다음 날 day 근무 불가
         if shift_type == 'day' and status['last_shift'] == 'evening':
             return False
@@ -61,36 +62,14 @@ def assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, v
         eligible_nurses = [nurse for nurse in available_nurses if is_eligible_for_shift(nurse, shift_type, current_date)]
         
         # 가능한 간호사만 배정하고, 부족하더라도 오류 없이 진행
-        if len(eligible_nurses) < num_required:
-            print(f"Not enough nurses available for {shift_type} shift on {current_date}. Available: {len(eligible_nurses)}, Required: {num_required}")
-            selected_nurses = eligible_nurses  # 가능한 간호사만 선택
-        else:
-            selected_nurses = []
-            for _ in range(num_required):
-                if not eligible_nurses:
-                    break
-                nurse = min(eligible_nurses, key=lambda n: nurse_status[n]['total_shifts'])
-                selected_nurses.append(nurse)
-                eligible_nurses.remove(nurse)
-            
-            # 부사수는 반드시 사수와 함께 근무
-            for nurse in selected_nurses:
-                if nurse in juniors:
-                    senior = next(senior for senior, junior in senior_junior_pairs if junior == nurse)
-                    if senior in eligible_nurses:
-                        selected_nurses.append(senior)
-                        eligible_nurses.remove(senior)
-                
-                # 사수는 다른 사수와 근무 가능
-                elif nurse in seniors:
-                    other_senior = next((senior for senior in seniors if senior in eligible_nurses), None)
-                    if other_senior:
-                        selected_nurses.append(other_senior)
-                        eligible_nurses.remove(other_senior)
-
-        # 간호사가 부족한 상태라도 남은 간호사만 배정하여 진행
-        return selected_nurses[:num_required]
-
+        selected_nurses = eligible_nurses[:num_required]  # 가능한 간호사만 배정
+        
+        if len(selected_nurses) < num_required:
+            # 간호사 부족 시에 None을 추가해서 표시
+            missing_count = num_required - len(selected_nurses)
+            selected_nurses.extend([None] * missing_count)  # 부족한 간호사 수만큼 None 추가
+        
+        return selected_nurses
 
     while current_date <= end_date:
         is_weekend = current_date.weekday() >= 5
@@ -107,25 +86,31 @@ def assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, v
 
         for shift_type in ['day', 'evening', 'night']:
             shift_nurses = select_nurses(available_nurses, num_nurses[shift_type], shift_type)
-            daily_schedule['shifts'].extend([{'nurse': nurse, 'shift': shift_type} for nurse in shift_nurses])
             
+            # None이 있는 경우 간호사 부족을 표시
             for nurse in shift_nurses:
-                status = nurse_status[nurse]
-                status['last_shift'] = shift_type
-                status['total_shifts'] += 1
-                
-                if shift_type == 'night':
-                    status['consecutive_nights'] += 1
-                    status['last_off_day'] = current_date  # night 근무 후, 같은 날에 다시 night 근무 가능하게 설정
+                if nurse is None:
+                    daily_schedule['shifts'].append({'nurse': '간호사 부족', 'shift': shift_type})
                 else:
-                    status['consecutive_nights'] = 0
-                    if shift_type in ['day', 'evening']:
-                        status['consecutive_days'] += 1
+                    daily_schedule['shifts'].append({'nurse': nurse, 'shift': shift_type})
+                    # 근무 배정된 간호사의 상태 업데이트
+                    status = nurse_status[nurse]
+                    status['last_shift'] = shift_type
+                    status['total_shifts'] += 1
+                    
+                    if shift_type == 'night':
+                        status['consecutive_nights'] += 1
+                        status['last_off_day'] = current_date  # night 근무 후, 같은 날에 다시 night 근무 가능하게 설정
+                    else:
+                        status['consecutive_nights'] = 0
+                        if shift_type in ['day', 'evening']:
+                            status['consecutive_days'] += 1
 
-                if status['consecutive_days'] >= 5:
-                    status['last_off_day'] = current_date
-                    status['consecutive_days'] = 0
+                    if status['consecutive_days'] >= 5:
+                        status['last_off_day'] = current_date
+                        status['consecutive_days'] = 0
 
+        # 간호사들이 근무에 배정되지 않은 경우 off 처리
         for nurse in nurses:
             status = nurse_status[nurse]
             if nurse not in [shift['nurse'] for shift in daily_schedule['shifts']] and status['off_days'] < max_off_days_per_nurse:
