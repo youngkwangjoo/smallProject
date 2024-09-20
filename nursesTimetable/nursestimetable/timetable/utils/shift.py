@@ -2,14 +2,11 @@ from datetime import timedelta
 from .balance import balance_nurse_shifts, balance_shift_types
 import random
 
-def assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, vacation_days, total_off_days, total_work_days):
-    if not senior_junior_pairs:
-        seniors = []
-        juniors = []
-    else:
-        seniors, juniors = zip(*senior_junior_pairs)
-
+def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days):
+    # 스케줄 리스트를 초기화
     schedule = []
+
+    # 간호사들의 상태를 저장할 딕셔너리
     nurse_status = {nurse: {
         'last_shift': None, 
         'consecutive_nights': 0, 
@@ -73,21 +70,6 @@ def assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, v
                 nurse = min(eligible_nurses, key=lambda n: nurse_status[n]['total_shifts'])
                 selected_nurses.append(nurse)
                 eligible_nurses.remove(nurse)
-            
-            # 부사수는 반드시 사수와 함께 근무
-            for nurse in selected_nurses:
-                if nurse in juniors:
-                    senior = next(senior for senior, junior in senior_junior_pairs if junior == nurse)
-                    if senior in eligible_nurses:
-                        selected_nurses.append(senior)
-                        eligible_nurses.remove(senior)
-                
-                # 사수는 다른 사수와 근무 가능
-                elif nurse in seniors:
-                    other_senior = next((senior for senior in seniors if senior in eligible_nurses), None)
-                    if other_senior:
-                        selected_nurses.append(other_senior)
-                        eligible_nurses.remove(other_senior)
 
         return selected_nurses[:num_required]
 
@@ -155,5 +137,10 @@ def assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, v
 
     # 근무 종류별 균등화
     balance_shift_types(nurse_status, schedule)
+    
+    # 결과 출력
+    print("\n--- Nurse Work Counts ---")
+    for nurse, status in nurse_status.items():
+        print(f"{nurse}: 총 근무 횟수 = {status['total_shifts']} (Day: {status['day_shifts']}, Evening: {status['evening_shifts']}, Night: {status['night_shifts']})")
 
     return schedule

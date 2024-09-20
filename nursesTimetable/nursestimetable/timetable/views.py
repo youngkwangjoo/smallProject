@@ -53,7 +53,7 @@ def generate_schedule(request):
                 seniors.remove(senior)
 
             # assign_shifts로 스케줄 생성
-            schedule = assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, vacation_days, total_off_days, total_work_days)
+            schedule = assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days)
 
             weeks = []
             week = []
