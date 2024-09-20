@@ -8,7 +8,13 @@
         <tr>
             <td>{{ day.date }}</td>
             {% for shift in day.shifts %}
-                <td>{{ shift.nurse.name }}</td>
+                <td>
+                    {% if shift.nurse == '간호사 부족' %}
+                        {{ shift.nurse }}
+                    {% else %}
+                        {{ shift.nurse.name }}
+                    {% endif %}
+                </td>
                 <td>{{ shift.shift }}</td>
             {% endfor %}
         </tr>

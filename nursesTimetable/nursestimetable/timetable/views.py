@@ -22,14 +22,13 @@ def nurse_input(request):
 def generate_schedule(request):
     nurses = Nurse.objects.all()
     start_date = date(2024, 10, 1)
-    end_date = date(2024, 10, 30)
+    end_date = date(2024, 10, 31)
 
     holidays = [
         date(2024, 10, 1),
         date(2024, 10, 5),
     ]
 
-    # vacation_days 설정
     vacation_days = {}
     for nurse in nurses:
         vacation_days[nurse.id] = [leave_day.date for leave_day in nurse.leave_days.all()]
@@ -56,6 +55,9 @@ def generate_schedule(request):
             # assign_shifts로 스케줄 생성
             schedule = assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, vacation_days, total_off_days, total_work_days)
 
+            # 디버깅을 위한 스케줄 출력
+            print(schedule)  # 스케줄이 제대로 생성되었는지 확인
+
             weeks = []
             week = []
             for day_schedule in schedule:
@@ -71,6 +73,7 @@ def generate_schedule(request):
         form = OffDaysForm()
 
     return render(request, 'off_days_form.html', {'form': form})
+
 
 def nurse_list(request):
     nurses = Nurse.objects.all()
