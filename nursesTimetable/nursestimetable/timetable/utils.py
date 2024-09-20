@@ -197,25 +197,33 @@ def balance_shift_types(nurse_status, schedule):
         evening_count = status.get('evening_shifts', 0)
         night_count = status.get('night_shifts', 0)
 
-        # 총 근무 횟수에서 각 근무 종류의 불균형을 계산
+        # 최소 및 최대 근무 횟수 찾기
         min_shifts = min(day_count, evening_count, night_count)
         max_shifts = max(day_count, evening_count, night_count)
 
-        # 불균형을 조정 - night 시프트는 다른 시프트로 변경하지 않음
+        # 간호사의 시프트별 불균형이 큰 경우, 조정하여 균형을 맞춤
         for day_schedule in schedule:
             for shift in day_schedule['shifts']:
                 if shift['nurse'] == nurse:
                     shift_type = shift['shift']
                     
-                    # 불균형이 크면 해당 간호사의 evening 시프트만 day로 변경
-                    if shift_type == 'evening' and evening_count > min_shifts:
-                        shift['shift'] = 'day'
-                        day_count += 1
-                        evening_count -= 1
-                    elif shift_type == 'day' and day_count > min_shifts:
+                    # night 시프트가 적을 경우 해당 간호사에게 night 시프트 할당
+                    if night_count < min_shifts + 1 and shift_type != 'night':
+                        shift['shift'] = 'night'
+                        night_count += 1
+                        if shift_type == 'day':
+                            day_count -= 1
+                        elif shift_type == 'evening':
+                            evening_count -= 1
+
+                    # evening 시프트가 적을 경우 해당 간호사에게 evening 시프트 할당
+                    elif evening_count < min_shifts + 1 and shift_type != 'evening':
                         shift['shift'] = 'evening'
-                        day_count -= 1
                         evening_count += 1
+                        if shift_type == 'day':
+                            day_count -= 1
+                        elif shift_type == 'night':
+                            night_count -= 1
 
         # 업데이트된 shift 카운트 저장
         nurse_status[nurse]['day_shifts'] = day_count
