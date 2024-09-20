@@ -2,7 +2,7 @@ from datetime import date
 from django.shortcuts import render, redirect
 from .forms import NurseForm
 from .models import Nurse
-from .utils import assign_shifts
+from .utils.shift import assign_shifts  # shift 모듈에서 assign_shifts 함수 가져오기
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView
 from .forms import OffDaysForm
@@ -54,9 +54,6 @@ def generate_schedule(request):
 
             # assign_shifts로 스케줄 생성
             schedule = assign_shifts(nurses, start_date, end_date, holidays, senior_junior_pairs, vacation_days, total_off_days, total_work_days)
-
-            # 디버깅을 위한 스케줄 출력
-            print(schedule)  # 스케줄이 제대로 생성되었는지 확인
 
             weeks = []
             week = []
