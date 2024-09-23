@@ -1,82 +1,79 @@
-from datetime import date
-from django.shortcuts import render, redirect
-from .forms import NurseForm
+from datetime import datetime
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .serializers import NurseSerializer
 from .models import Nurse
-from .utils.shift import assign_shifts  # shift 모듈에서 assign_shifts 함수 가져오기
-from django.urls import reverse_lazy
-from django.views.generic import DeleteView
-from .forms import OffDaysForm
-import random  # 랜덤 페어링을 위해 import
+from .utils.shift import assign_shifts
+import json
 
-def nurse_input(request):
-    if request.method == 'POST':
-        form = NurseForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('nurse_list')
-    else:
-        form = NurseForm()
-    
-    return render(request, 'nurse_input.html', {'form': form})
-
+@csrf_exempt  # 이 데코레이터를 추가하여 CSRF 검증 비활성화
 def generate_schedule(request):
-    nurses = Nurse.objects.all()
-    start_date = date(2024, 10, 1)
-    end_date = date(2024, 10, 31)
-
-    holidays = [
-        date(2024, 10, 1),
-        date(2024, 10, 5),
-    ]
-
-    vacation_days = {}
-    for nurse in nurses:
-        vacation_days[nurse.id] = [leave_day.date for leave_day in nurse.leave_days.all()]
-
     if request.method == 'POST':
-        form = OffDaysForm(request.POST)
-        if form.is_valid():
-            total_off_days = form.cleaned_data['total_off_days']
-            total_work_days = form.cleaned_data['total_work_days']  # 근무일 수 가져오기
-            
-            # 사수-부사수 페어링을 동적으로 처리 (랜덤 페어링)
-            seniors = [nurse for nurse in nurses if nurse.is_senior]
-            juniors = [nurse for nurse in nurses if not nurse.is_senior]
-            senior_junior_pairs = []
+        data = json.loads(request.body)
 
-            # 페어링이 필요한 만큼 랜덤으로 사수와 부사수를 짝짓기
-            while juniors and seniors:
-                junior = random.choice(juniors)
-                senior = random.choice(seniors)
-                senior_junior_pairs.append((senior, junior))
-                juniors.remove(junior)
-                seniors.remove(senior)
+        # 프론트엔드로부터 간호사 목록, 연차, 달력 정보 받아옴
+        nurse_list = data.get('nurses', [])
+        total_off_days = int(data.get('total_off_days', 0))
+        total_work_days = int(data.get('total_work_days', 0))
 
-            # assign_shifts로 스케줄 생성
-            schedule = assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days)
+        # 간호사 객체 생성 및 연차 정보 처리
+        nurses = []
+        vacation_days = {}
+        for nurse_data in nurse_list:
+            nurse, created = Nurse.objects.get_or_create(
+                id=nurse_data['id'],
+                defaults={
+                    'name': nurse_data['name'],
+                    'is_senior': nurse_data['is_senior']
+                }
+            )
+            vacation_days[str(nurse.id)] = nurse_data.get('vacation_days', [])
+            nurses.append(nurse)
 
-            weeks = []
-            week = []
-            for day_schedule in schedule:
-                if len(week) == 7:
-                    weeks.append(week)
-                    week = []
-                week.append(day_schedule)
-            if week:
-                weeks.append(week)
+        # 스케줄 생성
+        start_date = datetime(2024, 10, 1).date()
+        end_date = datetime(2024, 10, 31).date()
+        holidays = []  # 별도 휴일 정보가 없다면 비워두기
 
-            return render(request, 'calendar.html', {'schedule': weeks})
-    else:
-        form = OffDaysForm()
+        schedule = assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days)
 
-    return render(request, 'off_days_form.html', {'form': form})
+        # 근무 상태 집계 및 콘솔 출력
+        nurse_status = {nurse: {
+            'total_shifts': 0,
+            'day_shifts': 0,
+            'evening_shifts': 0,
+            'night_shifts': 0
+        } for nurse in nurses}
 
+        for day_schedule in schedule:
+            for shift in day_schedule['shifts']:
+                nurse = shift['nurse']
+                shift_type = shift['shift']
+                
+                nurse_status[nurse]['total_shifts'] += 1
+                if shift_type == 'day':
+                    nurse_status[nurse]['day_shifts'] += 1
+                elif shift_type == 'evening':
+                    nurse_status[nurse]['evening_shifts'] += 1
+                elif shift_type == 'night':
+                    nurse_status[nurse]['night_shifts'] += 1
 
-def nurse_list(request):
-    nurses = Nurse.objects.all()
-    return render(request, 'nurse_list.html', {'nurses': nurses})
+        # 콘솔 출력
+        for nurse, status in nurse_status.items():
+            print(f"{nurse}: 총 근무 횟수 = {status['total_shifts']} (Day: {status['day_shifts']}, Evening: {status['evening_shifts']}, Night: {status['night_shifts']})")
 
-class NurseDeleteView(DeleteView):
-    model = Nurse
-    template_name = 'nurse_confirm_delete.html'
-    success_url = reverse_lazy('nurse_list')  # 삭제 후 리다이렉트할 URL
+        # 스케줄 데이터를 JSON으로 변환하여 반환
+        schedule_data = []
+        for day_schedule in schedule:
+            day_data = {
+                'date': day_schedule['date'],
+                'shifts': [
+                    {'nurse': NurseSerializer(shift['nurse']).data, 'shift': shift['shift']}
+                    for shift in day_schedule['shifts']
+                ]
+            }
+            schedule_data.append(day_data)
+
+        return JsonResponse(schedule_data, safe=False)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
