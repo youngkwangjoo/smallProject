@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .serializers import NurseSerializer
@@ -15,6 +15,8 @@ def generate_schedule(request):
         nurse_list = data.get('nurses', [])
         total_off_days = int(data.get('total_off_days', 0))
         total_work_days = int(data.get('total_work_days', 0))
+        total_days = int(data.get('total_days', 0))  # 한 달의 총 일수
+        start_weekday = data.get('start_weekday', '')  # 시작 요일
 
         # 간호사 객체 생성 및 연차 정보 처리
         nurses = []
@@ -30,11 +32,17 @@ def generate_schedule(request):
             vacation_days[str(nurse.id)] = nurse_data.get('vacation_days', [])
             nurses.append(nurse)
 
-        # 스케줄 생성
-        start_date = datetime(2024, 10, 1).date()
-        end_date = datetime(2024, 10, 31).date()
+        # 요일을 숫자로 변환 (0: Monday, 6: Sunday)
+        weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        start_day_index = weekdays.index(start_weekday)
+
+        # 동적으로 한 달의 날짜 생성
+        start_date = datetime(2024, 10, 1).date()  # 이 부분은 원래의 1일 날짜, 2024년 10월을 예시로 사용
+        end_date = start_date + timedelta(days=total_days - 1)  # 총 일수를 기준으로 마지막 날짜 계산
+
         holidays = []  # 별도 휴일 정보가 없다면 비워두기
 
+        # 스케줄 생성
         schedule = assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days)
 
         # 근무 상태 집계 및 콘솔 출력
@@ -49,7 +57,7 @@ def generate_schedule(request):
             for shift in day_schedule['shifts']:
                 nurse = shift['nurse']
                 shift_type = shift['shift']
-                
+
                 nurse_status[nurse]['total_shifts'] += 1
                 if shift_type == 'day':
                     nurse_status[nurse]['day_shifts'] += 1

@@ -13,26 +13,42 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
     
     total_days = (end_date - start_date).days + 1
 
-    def random_assign_first_day(current_date, available_nurses):
+    def random_assign_first_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses):
         daily_schedule = {'date': current_date, 'shifts': []}
 
-        for shift_type in ['day', 'evening', 'night']:
-            num_required = 2 if shift_type == 'night' else 3
-            shift_nurses = random.sample(available_nurses, num_required)
-            
-            for nurse in shift_nurses:
-                nurse_status[nurse]['total_shifts'] += 1
-                nurse_status[nurse][f'{shift_type}_shifts'] += 1
-                nurse_status[nurse]['last_shift'] = shift_type
-                daily_schedule['shifts'].append({'nurse': nurse, 'shift': shift_type})
+        # Day shift assignment
+        day_nurses = random.sample(available_nurses, num_day_evening_nurses)
+        for nurse in day_nurses:
+            nurse_status[nurse]['total_shifts'] += 1
+            nurse_status[nurse]['day_shifts'] += 1
+            nurse_status[nurse]['last_shift'] = 'day'
+            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'day'})
+
+        # Evening shift assignment
+        available_nurses_for_evening = [n for n in available_nurses if n not in day_nurses]
+        evening_nurses = random.sample(available_nurses_for_evening, num_day_evening_nurses)
+        for nurse in evening_nurses:
+            nurse_status[nurse]['total_shifts'] += 1
+            nurse_status[nurse]['evening_shifts'] += 1
+            nurse_status[nurse]['last_shift'] = 'evening'
+            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'evening'})
+
+        # Night shift assignment
+        available_nurses_for_night = [n for n in available_nurses if n not in day_nurses and n not in evening_nurses]
+        night_nurses = random.sample(available_nurses_for_night, num_night_nurses)
+        for nurse in night_nurses:
+            nurse_status[nurse]['total_shifts'] += 1
+            nurse_status[nurse]['night_shifts'] += 1
+            nurse_status[nurse]['last_shift'] = 'night'
+            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'night'})
 
         return daily_schedule
 
-    def assign_from_second_day(current_date, available_nurses):
+    def assign_from_second_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses):
         daily_schedule = {'date': current_date, 'shifts': []}
         
         available_day_nurses = sorted(available_nurses, key=lambda n: nurse_status[n]['day_shifts'])
-        day_nurses = available_day_nurses[:3]
+        day_nurses = available_day_nurses[:num_day_evening_nurses]
         for nurse in day_nurses:
             nurse_status[nurse]['total_shifts'] += 1
             nurse_status[nurse]['day_shifts'] += 1
@@ -40,7 +56,7 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
             daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'day'})
 
         available_evening_nurses = sorted([n for n in available_nurses if n not in day_nurses], key=lambda n: nurse_status[n]['evening_shifts'])
-        evening_nurses = available_evening_nurses[:3]
+        evening_nurses = available_evening_nurses[:num_day_evening_nurses]
         for nurse in evening_nurses:
             nurse_status[nurse]['total_shifts'] += 1
             nurse_status[nurse]['evening_shifts'] += 1
@@ -48,7 +64,7 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
             daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'evening'})
 
         available_night_nurses = sorted([n for n in available_nurses if n not in day_nurses and n not in evening_nurses], key=lambda n: nurse_status[n]['night_shifts'])
-        night_nurses = available_night_nurses[:2]
+        night_nurses = available_night_nurses[:num_night_nurses]
         for nurse in night_nurses:
             nurse_status[nurse]['total_shifts'] += 1
             nurse_status[nurse]['night_shifts'] += 1
@@ -61,10 +77,15 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
         current_date = start_date + timedelta(days=day_count)
         available_nurses = [nurse for nurse in nurses if str(nurse.id) not in vacation_days or current_date.strftime('%Y-%m-%d') not in vacation_days[str(nurse.id)]]
 
+        # 주말인지 평일인지 확인
+        is_weekend = current_date.weekday() >= 5  # 5가 Saturday, 6이 Sunday
+        num_day_evening_nurses = 2 if is_weekend else 3
+        num_night_nurses = 2
+
         if day_count == 0:
-            daily_schedule = random_assign_first_day(current_date, available_nurses)
+            daily_schedule = random_assign_first_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses)
         else:
-            daily_schedule = assign_from_second_day(current_date, available_nurses)
+            daily_schedule = assign_from_second_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses)
 
         schedule.append(daily_schedule)
 
