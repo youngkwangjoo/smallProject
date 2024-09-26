@@ -89,10 +89,11 @@ def generate_schedule(request):
 
 
 @csrf_exempt
-def delete_all_nurses(request):
+def delete_nurses(request):
     if request.method == 'DELETE':
         # 모든 간호사를 삭제
         Nurse.objects.all().delete()
         return JsonResponse({'message': 'All nurses deleted successfully'}, status=200)
 
-    return JsonResponse({'error': 'Invalid request'}, status=400)  # 잘못된 요청 처리
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
