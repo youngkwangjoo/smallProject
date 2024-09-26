@@ -85,3 +85,21 @@ def generate_schedule(request):
         return JsonResponse(schedule_data, safe=False)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+
+@csrf_exempt
+def delete_nurse(request):
+    if request.method == 'DELETE':
+        data = json.loads(request.body)  # 요청에서 받은 JSON 데이터
+        nurse_id = data.get('id')  # 삭제할 간호사의 ID
+
+        # ID를 기반으로 간호사 삭제 시도
+        try:
+            nurse = Nurse.objects.get(id=nurse_id)
+            nurse.delete()  # 간호사 삭제
+            return JsonResponse({'message': f'Nurse {nurse_id} deleted successfully'}, status=200)
+        except Nurse.DoesNotExist:
+            return JsonResponse({'error': 'Nurse not found'}, status=404)  # 간호사가 존재하지 않음
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)  # 잘못된 요청 처리
