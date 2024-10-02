@@ -1,10 +1,11 @@
 # .github/workflows/cicd.yml
+
 name: CI/CD for Django project
 
 on:
   push:
     branches:
-      - pro  # main 브랜치로 푸시될 때만 동작
+      - pro 
 
 jobs:
   test:
@@ -23,23 +24,28 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install poetry
-        poetry install  
+        poetry install
+      working-directory: ./nursesTimetable  # pyproject.toml 파일이 있는 경로로 설정
 
     - name: Run tests
       run: |
-        poetry run python manage.py test  
+        poetry run python manage.py test
+      working-directory: ./nursesTimetable/nursestimetable  # manage.py 파일이 있는 경로로 설정
 
   deploy:
     runs-on: ubuntu-latest
     needs: test
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
     - name: Deploy to EC2
       run: |
-        ssh -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com
-        cd /smallProject
-        git pull origin pro
-        source /home/ubuntu/smallProject/venv/bin/activate
-        python manage.py migrate 
+        ssh -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com 
+        cd /home/ubuntu/smallProject  
+        git pull origin pro  
+        source /home/ubuntu/smallProject/venv/bin/activate  
+        cd nursesTimetable/nursestimetable
+        python manage.py migrate  
         sudo systemctl restart nginx 
-#      env:
-#       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # GitHub secrets에서 EC2의 SSH 키 설정
+
