@@ -5,7 +5,7 @@ name: CI/CD for Django project
 on:
   push:
     branches:
-      - pro 
+      - pro  # 'pro' 브랜치에 푸시될 때 실행
 
 jobs:
   test:
@@ -39,13 +39,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Add SSH key and set permissions
+      run: |
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > nursesProject.pem
+        chmod 600 nursesProject.pem
+
     - name: Deploy to EC2
       run: |
-        ssh -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com 
+        ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << 'EOF'
         cd /home/ubuntu/smallProject  
-        git pull origin pro  
-        source /home/ubuntu/smallProject/venv/bin/activate  
+        git pull origin pro  # 최신 코드 가져오기
+        source /home/ubuntu/smallProject/venv/bin/activate 
         cd nursesTimetable/nursestimetable
-        python manage.py migrate  
-        sudo systemctl restart nginx 
-
+        pip install -r /home/ubuntu/smallProject/nursesTimetable/requirements.txt  
+        python manage.py migrate 
+        sudo systemctl restart nginx  
+        EOF
