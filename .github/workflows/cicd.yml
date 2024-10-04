@@ -46,25 +46,27 @@ jobs:
 
     - name: Deploy to EC2
       run: |
-        ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << EOF
         
-        PID=\$(sudo lsof -t -i:8000)
-        if [ ! -z "\$PID" ]; then
-        sudo kill -9 \$PID
+        # 포트 8000을 사용하는 프로세스를 종료
+        PID=$(sudo lsof -t -i:ㄴ8000)
+        if [ ! -z "$PID" ]; then
+        sudo kill -9 $PID
         fi
 
         cd /home/ubuntu/smallProject  
-        git pull origin pro  
+        git pull origin pro  # 최신 코드 가져오기
 
+        # Poetry 가상환경 활성화
         source /home/ubuntu/.cache/pypoetry/virtualenvs/nursestimetable-KJ929Rd4-py3.12/bin/activate
 
         cd nursesTimetable/nursestimetable
-        poetry run python manage.py migrate 
+        poetry run python manage.py migrate  # 데이터베이스 마이그레이션
 
-        sudo systemctl daemon-reload  
-        sudo systemctl restart nginx 
+        sudo systemctl daemon-reload  # nginx 설정 다시 로드
+        sudo systemctl restart nginx  # nginx 재시작
 
-        poetry run python manage.py runserver 0.0.0.0:8000  
+        poetry run python manage.py runserver 0.0.0.0:8000  # Django 서버 재시작
         EOF
 
 
