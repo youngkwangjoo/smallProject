@@ -51,7 +51,10 @@ jobs:
         git pull origin pro  # 최신 코드 가져오기
         source /home/ubuntu/smallProject/venv/bin/activate 
         cd nursesTimetable/nursestimetable
-        pip install -r /home/ubuntu/smallProject/nursesTimetable/requirements.txt  
         python manage.py migrate 
         sudo systemctl restart nginx  
         EOF
+        cd smallProject/nursesTimetable/nursestimetable
+        poetry run python manage.py runserver 0.0.0.0:8000
+
+
