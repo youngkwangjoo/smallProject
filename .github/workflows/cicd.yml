@@ -47,12 +47,24 @@ jobs:
     - name: Deploy to EC2
       run: |
         ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << 'EOF'
+        
+        PID=\$(sudo lsof -t -i:8000)
+        if [ ! -z "\$PID" ]; then
+        sudo kill -9 \$PID
+        fi
+
         cd /home/ubuntu/smallProject  
-        git pull origin pro  # 최신 코드 가져오기
-        source /home/ubuntu/smallProject/venv/bin/activate 
+        git pull origin pro  
+
+        source /home/ubuntu/.cache/pypoetry/virtualenvs/nursestimetable-KJ929Rd4-py3.12/bin/activate
+
         cd nursesTimetable/nursestimetable
         poetry run python manage.py migrate 
-        sudo systemctl restart nginx  
-        poetry run python manage.py runserver 0.0.0.0:8000
+
+        sudo systemctl daemon-reload  
+        sudo systemctl restart nginx 
+
+        poetry run python manage.py runserver 0.0.0.0:8000  
         EOF
+
 
