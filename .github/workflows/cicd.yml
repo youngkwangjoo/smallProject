@@ -49,11 +49,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << EOF
         
         # 포트 8000을 사용하는 프로세스를 종료
-        PID=$(sudo lsof -t -i:ㄴ8000)
-        if [ ! -z "$PID" ]; then
-        sudo kill -9 $PID
-        fi
-
+        sudo fuser -k 8000/tcp
+        
         cd /home/ubuntu/smallProject  
         git pull origin pro  # 최신 코드 가져오기
 
