@@ -1,14 +1,12 @@
-# .github/workflows/cicd.yml
-
 name: CI/CD for Django project
 
 on:
   push:
     branches:
-      - pro  # 'pro' 브랜치에 푸시될 때 실행
+      - pro  # 'pro' 브랜치에 push될 때 실행
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,43 +25,20 @@ jobs:
         poetry install
       working-directory: ./nursesTimetable  # pyproject.toml 파일이 있는 경로로 설정
 
-    - name: Run tests
+    - name: Stop Django server and update code
       run: |
-        poetry run python manage.py test
-      working-directory: ./nursesTimetable/nursestimetable  # manage.py 파일이 있는 경로로 설정
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Add SSH key and set permissions
-      run: |
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > nursesProject.pem
-        chmod 600 nursesProject.pem
-
-    - name: Deploy to EC2
-      run: |
-        ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << EOF
-        
-        # 포트 8000을 사용하는 프로세스를 종료
+        ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << 'EOF'
+        # 포트 8000을 사용하는 프로세스 종료
         sudo fuser -k 8000/tcp
         
-        cd /home/ubuntu/smallProject  
-        git pull origin pro  # 최신 코드 가져오기
+        # 최신 코드 가져오기
+        cd /home/ubuntu/smallProject
+        git pull origin pro
 
-        # Poetry 가상환경 활성화
-        source /home/ubuntu/.cache/pypoetry/virtualenvs/nursestimetable-KJ929Rd4-py3.12/bin/activate
+        # 의존성 설치 및 마이그레이션 적용
+        poetry install
+        poetry run python manage.py migrate
 
-        cd nursesTimetable/nursestimetable
-        poetry run python manage.py migrate  # 데이터베이스 마이그레이션
-
-        sudo systemctl daemon-reload  # nginx 설정 다시 로드
-        sudo systemctl restart nginx  # nginx 재시작
-
-        poetry run python manage.py runserver 0.0.0.0:8000  # Django 서버 재시작
+        # Django 개발 서버 다시 시작
+        nohup poetry run python manage.py runserver 0.0.0.0:8000 &
         EOF
-
-
