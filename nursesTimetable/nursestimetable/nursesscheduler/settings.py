@@ -10,6 +10,7 @@ DEBUG = False
 ALLOWED_HOSTS = ["api.schdule.site", "www.schdule.site"]
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -17,7 +18,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'timetable',
-    'corsheaders',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False
@@ -25,7 +25,24 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # 개발 중 프론트엔드 URL
     "https://www.schdule.site",  # 배포된 프론트엔드 URL
+    "http://localhost:8000"
 ]
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS",  # preflight 요청을 위한 OPTIONS 메서드 허용
+]
+
+CORS_ALLOW_HEADERS = [
+    "authorization",
+    "content-type",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
