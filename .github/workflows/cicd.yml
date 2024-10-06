@@ -1,4 +1,4 @@
-name: CI/CD for Django project
+name: CI for Django project
 
 on:
   push:
@@ -18,14 +18,12 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Install dependencies
+    - name: Add SSH key and set permissions
       run: |
-        python -m pip install --upgrade pip
-        pip install poetry
-        poetry install
-      working-directory: ./nursesTimetable  # pyproject.toml 파일이 있는 경로로 설정
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > nursesProject.pem
+        chmod 600 nursesProject.pem
 
-    - name: Stop Django server and update code
+    - name: Git pull on EC2
       run: |
         ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << 'EOF'
         
@@ -33,3 +31,6 @@ jobs:
         cd /home/ubuntu/smallProject
         git pull origin pro
         EOF
+
+    - name: Clean up SSH key
+      run: rm nursesProject.pem
