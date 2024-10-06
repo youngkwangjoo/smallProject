@@ -28,17 +28,8 @@ jobs:
     - name: Stop Django server and update code
       run: |
         ssh -o StrictHostKeyChecking=no -i nursesProject.pem ubuntu@ec2-18-215-125-12.compute-1.amazonaws.com << 'EOF'
-        # 포트 8000을 사용하는 프로세스 종료
-        sudo fuser -k 8000/tcp
         
         # 최신 코드 가져오기
         cd /home/ubuntu/smallProject
         git pull origin pro
-
-        # 의존성 설치 및 마이그레이션 적용
-        poetry install
-        poetry run python manage.py migrate
-
-        # Django 개발 서버 다시 시작
-        nohup poetry run python manage.py runserver 0.0.0.0:8000 &
         EOF
