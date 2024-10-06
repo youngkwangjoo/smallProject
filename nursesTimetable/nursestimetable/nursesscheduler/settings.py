@@ -9,6 +9,9 @@ DEBUG = False
 
 ALLOWED_HOSTS = ["api.schdule.site", "www.schdule.site"]
 
+
+ROOT_URLCONF = 'nursesscheduler.urls'
+
 INSTALLED_APPS = [
     'corsheaders',
     'django.contrib.admin',
