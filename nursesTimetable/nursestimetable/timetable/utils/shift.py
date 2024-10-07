@@ -37,6 +37,10 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
     def random_assign_first_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses):
         daily_schedule = {'date': current_date, 'shifts': []}
 
+        required_nurses = num_day_evening_nurses * 2 + num_night_nurses
+        if len(available_nurses) < required_nurses:
+            print(f"Warning: 간호사 수가 부족합니다. {current_date}에 필요한 간호사 수는 {required_nurses}명이나, 배정 가능한 간호사는 {len(available_nurses)}명입니다.")
+
         # Day shift assignment
         day_nurses = random.sample(available_nurses, num_day_evening_nurses)
         for nurse in day_nurses:
@@ -72,6 +76,10 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
     def assign_from_second_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses):
         daily_schedule = {'date': current_date, 'shifts': []}
         
+        required_nurses = num_day_evening_nurses * 2 + num_night_nurses
+        if len(available_nurses) < required_nurses:
+            print(f"Warning: 간호사 수가 부족합니다. {current_date}에 필요한 간호사 수는 {required_nurses}명이나, 배정 가능한 간호사는 {len(available_nurses)}명입니다.")        
+            
         # 연속 근무 일수를 체크하고 off 설정
         for nurse in available_nurses:
             if nurse_status[nurse]['consecutive_days'] >= 5:
