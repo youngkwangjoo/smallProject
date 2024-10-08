@@ -15,7 +15,7 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
         'off_count': 0,  # night 근무 후 두 타임 off 처리
         'is_senior': nurse['is_senior']
     } for nurse in nurses}
-    
+    # 한달
     total_days = (end_date - start_date).days + 1
 
     # 사수와 부사수 배정 규칙을 반영한 근무 가능 여부 판단 함수
@@ -38,21 +38,23 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
     # 사수와 부사수를 고려한 근무 배정 로직
     def assign_shift_for_shift_type(current_date, available_nurses, shift_type, num_nurses_needed):
         daily_schedule = []
-        # 사수와 부사수를 나누어 리스트로 관리
-        senior_nurses = [nurse for nurse in available_nurses if nurse_status[nurse['id']]['is_senior']]
-        junior_nurses = [nurse for nurse in available_nurses if not nurse_status[nurse['id']]['is_senior']]
         
-        # 사수를 먼저 배정
-        assigned_seniors = random.sample(senior_nurses, min(num_nurses_needed, len(senior_nurses)))
-        
-        # 부사수는 사수가 배정되었을 때만 함께 배정
-        assigned_juniors = []
-        if len(assigned_seniors) > 0:
-            available_juniors = [nurse for nurse in junior_nurses if is_available_for_shift(nurse['id'], shift_type)]
-            assigned_juniors = random.sample(available_juniors, min(num_nurses_needed - len(assigned_seniors), len(available_juniors)))
-        
-        assigned_nurses = assigned_seniors + assigned_juniors
-        
+        # 근무 가능한 사수들만 필터링
+        senior_nurses = [nurse for nurse in available_nurses if nurse_status[nurse['id']]['is_senior'] and is_available_for_shift(nurse['id'], shift_type)]
+        other_nurses = [nurse for nurse in available_nurses if not nurse_status[nurse['id']]['is_senior'] and is_available_for_shift(nurse['id'], shift_type)]
+
+        # 근무 가능한 사수 중 1명을 배정
+        if len(senior_nurses) > 0:
+            assigned_seniors = random.sample(senior_nurses, 1)  # 근무 가능한 사수 중에서 무작위로 1명 배정
+        else:
+            assigned_seniors = []  # 사수가 없으면 빈 리스트로 처리
+
+        # 나머지 인원은 사수/부사수 구분 없이 배정
+        remaining_nurses_needed = num_nurses_needed - len(assigned_seniors)
+        assigned_others = random.sample(other_nurses, min(remaining_nurses_needed, len(other_nurses)))
+
+        assigned_nurses = assigned_seniors + assigned_others
+
         for nurse in assigned_nurses:
             nurse_status[nurse['id']]['total_shifts'] += 1
             nurse_status[nurse['id']][f'{shift_type}_shifts'] += 1
@@ -61,6 +63,7 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
             daily_schedule.append({'nurse': nurse['id'], 'shift': shift_type})
 
         return daily_schedule
+
 
     for day_count in range(total_days):
         current_date = start_date + timedelta(days=day_count)
