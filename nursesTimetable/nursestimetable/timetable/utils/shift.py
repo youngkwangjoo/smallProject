@@ -3,123 +3,68 @@ from datetime import timedelta
 
 def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days):
     schedule = []
-    nurse_status = {nurse: {
+
+    # nurse 리스트는 id와 is_senior 속성을 가진다고 가정
+    nurse_status = {nurse['id']: {
         'total_shifts': 0,
         'day_shifts': 0,
         'evening_shifts': 0,
         'night_shifts': 0,
         'consecutive_days': 0,  # 연속 근무 일수
         'last_shift': None,
-        'off_count': 0  # night 근무 후 두 타임 off 처리
+        'off_count': 0,  # night 근무 후 두 타임 off 처리
+        'is_senior': nurse['is_senior']
     } for nurse in nurses}
     
     total_days = (end_date - start_date).days + 1
 
-    # 근무 가능 여부를 판단하는 함수
-    def is_available_for_shift(nurse, shift_type):
+    # 사수와 부사수 배정 규칙을 반영한 근무 가능 여부 판단 함수
+    def is_available_for_shift(nurse_id, shift_type):
+        nurse = nurse_status[nurse_id]
         # off 상태에 있으면 근무 불가
-        if nurse_status[nurse]['off_count'] > 0:
+        if nurse['off_count'] > 0:
             return False
         # 연속 근무 5일 제한 후 off
-        if nurse_status[nurse]['consecutive_days'] >= 5:
+        if nurse['consecutive_days'] >= 5:
             return False
         # evening 근무 후 day 근무 불가
-        if shift_type == 'day' and nurse_status[nurse]['last_shift'] == 'evening':
+        if shift_type == 'day' and nurse['last_shift'] == 'evening':
             return False
         # night 근무 후 evening 불가
-        if shift_type == 'evening' and nurse_status[nurse]['last_shift'] == 'night':
-            return False
-        # evening 근무 후 day 근무 불가
-        if shift_type == 'day' and nurse_status[nurse]['last_shift'] == 'evening':
+        if shift_type == 'evening' and nurse['last_shift'] == 'night':
             return False
         return True
 
-    def random_assign_first_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses):
-        daily_schedule = {'date': current_date, 'shifts': []}
-
-        required_nurses = num_day_evening_nurses * 2 + num_night_nurses
-        if len(available_nurses) < required_nurses:
-            print(f"Warning: 간호사 수가 부족합니다. {current_date}에 필요한 간호사 수는 {required_nurses}명이나, 배정 가능한 간호사는 {len(available_nurses)}명입니다.")
-
-        # Day shift assignment
-        day_nurses = random.sample(available_nurses, num_day_evening_nurses)
-        for nurse in day_nurses:
-            nurse_status[nurse]['total_shifts'] += 1
-            nurse_status[nurse]['day_shifts'] += 1
-            nurse_status[nurse]['last_shift'] = 'day'
-            nurse_status[nurse]['consecutive_days'] += 1
-            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'day'})
-
-        # Evening shift assignment
-        available_nurses_for_evening = [n for n in available_nurses if n not in day_nurses]
-        evening_nurses = random.sample(available_nurses_for_evening, num_day_evening_nurses)
-        for nurse in evening_nurses:
-            nurse_status[nurse]['total_shifts'] += 1
-            nurse_status[nurse]['evening_shifts'] += 1
-            nurse_status[nurse]['last_shift'] = 'evening'
-            nurse_status[nurse]['consecutive_days'] += 1
-            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'evening'})
-
-        # Night shift assignment
-        available_nurses_for_night = [n for n in available_nurses if n not in day_nurses and n not in evening_nurses]
-        night_nurses = random.sample(available_nurses_for_night, num_night_nurses)
-        for nurse in night_nurses:
-            nurse_status[nurse]['total_shifts'] += 1
-            nurse_status[nurse]['night_shifts'] += 1
-            nurse_status[nurse]['last_shift'] = 'night'
-            nurse_status[nurse]['consecutive_days'] += 1
-            nurse_status[nurse]['off_count'] = 2  # night 근무 후 2번 off
-            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'night'})
-
-        return daily_schedule
-
-    def assign_from_second_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses):
-        daily_schedule = {'date': current_date, 'shifts': []}
+    # 사수와 부사수를 고려한 근무 배정 로직
+    def assign_shift_for_shift_type(current_date, available_nurses, shift_type, num_nurses_needed):
+        daily_schedule = []
+        # 사수와 부사수를 나누어 리스트로 관리
+        senior_nurses = [nurse for nurse in available_nurses if nurse_status[nurse['id']]['is_senior']]
+        junior_nurses = [nurse for nurse in available_nurses if not nurse_status[nurse['id']]['is_senior']]
         
+        # 사수를 먼저 배정
+        assigned_seniors = random.sample(senior_nurses, min(num_nurses_needed, len(senior_nurses)))
         
+        # 부사수는 사수가 배정되었을 때만 함께 배정
+        assigned_juniors = []
+        if len(assigned_seniors) > 0:
+            available_juniors = [nurse for nurse in junior_nurses if is_available_for_shift(nurse['id'], shift_type)]
+            assigned_juniors = random.sample(available_juniors, min(num_nurses_needed - len(assigned_seniors), len(available_juniors)))
         
-        # 연속 근무 일수를 체크하고 off 설정
-        for nurse in available_nurses:
-            if nurse_status[nurse]['consecutive_days'] >= 5:
-                nurse_status[nurse]['consecutive_days'] = 0
-                nurse_status[nurse]['off_count'] = 3  # 5일 연속 근무 후 3번 off
-
-        # Day shift assignment
-        available_day_nurses = [n for n in available_nurses if is_available_for_shift(n, 'day')]
-        day_nurses = sorted(available_day_nurses, key=lambda n: nurse_status[n]['day_shifts'])[:num_day_evening_nurses]
-        for nurse in day_nurses:
-            nurse_status[nurse]['total_shifts'] += 1
-            nurse_status[nurse]['day_shifts'] += 1
-            nurse_status[nurse]['last_shift'] = 'day'
-            nurse_status[nurse]['consecutive_days'] += 1
-            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'day'})
-
-        # Evening shift assignment
-        available_evening_nurses = [n for n in available_nurses if n not in day_nurses and is_available_for_shift(n, 'evening')]
-        evening_nurses = sorted(available_evening_nurses, key=lambda n: nurse_status[n]['evening_shifts'])[:num_day_evening_nurses]
-        for nurse in evening_nurses:
-            nurse_status[nurse]['total_shifts'] += 1
-            nurse_status[nurse]['evening_shifts'] += 1
-            nurse_status[nurse]['last_shift'] = 'evening'
-            nurse_status[nurse]['consecutive_days'] += 1
-            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'evening'})
-
-        # Night shift assignment
-        available_night_nurses = [n for n in available_nurses if n not in day_nurses and n not in evening_nurses and is_available_for_shift(n, 'night')]
-        night_nurses = sorted(available_night_nurses, key=lambda n: nurse_status[n]['night_shifts'])[:num_night_nurses]
-        for nurse in night_nurses:
-            nurse_status[nurse]['total_shifts'] += 1
-            nurse_status[nurse]['night_shifts'] += 1
-            nurse_status[nurse]['last_shift'] = 'night'
-            nurse_status[nurse]['consecutive_days'] += 1
-            nurse_status[nurse]['off_count'] = 2  # night 근무 후 2번 off
-            daily_schedule['shifts'].append({'nurse': nurse, 'shift': 'night'})
+        assigned_nurses = assigned_seniors + assigned_juniors
+        
+        for nurse in assigned_nurses:
+            nurse_status[nurse['id']]['total_shifts'] += 1
+            nurse_status[nurse['id']][f'{shift_type}_shifts'] += 1
+            nurse_status[nurse['id']]['last_shift'] = shift_type
+            nurse_status[nurse['id']]['consecutive_days'] += 1
+            daily_schedule.append({'nurse': nurse['id'], 'shift': shift_type})
 
         return daily_schedule
 
     for day_count in range(total_days):
         current_date = start_date + timedelta(days=day_count)
-        available_nurses = [nurse for nurse in nurses if str(nurse.id) not in vacation_days or current_date.strftime('%Y-%m-%d') not in vacation_days[str(nurse.id)]]
+        available_nurses = [nurse for nurse in nurses if str(nurse['id']) not in vacation_days or current_date.strftime('%Y-%m-%d') not in vacation_days[str(nurse['id'])]]
 
         # 주말인지 평일인지 확인
         is_weekend = current_date.weekday() >= 5  # 5가 Saturday, 6이 Sunday
@@ -127,15 +72,16 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
         num_night_nurses = 2
 
         # off 처리
-        for nurse in nurses:
-            if nurse_status[nurse]['off_count'] > 0:
-                nurse_status[nurse]['off_count'] -= 1  # off 상태 업데이트
+        for nurse_id in nurse_status:
+            if nurse_status[nurse_id]['off_count'] > 0:
+                nurse_status[nurse_id]['off_count'] -= 1  # off 상태 업데이트
 
-        if day_count == 0:
-            daily_schedule = random_assign_first_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses)
-        else:
-            daily_schedule = assign_from_second_day(current_date, available_nurses, num_day_evening_nurses, num_night_nurses)
+        # 근무 배정 (사수-부사수 규칙 포함)
+        daily_schedule = []
+        daily_schedule.extend(assign_shift_for_shift_type(current_date, available_nurses, 'day', num_day_evening_nurses))
+        daily_schedule.extend(assign_shift_for_shift_type(current_date, available_nurses, 'evening', num_day_evening_nurses))
+        daily_schedule.extend(assign_shift_for_shift_type(current_date, available_nurses, 'night', num_night_nurses))
 
-        schedule.append(daily_schedule)
+        schedule.append({'date': current_date, 'shifts': daily_schedule})
 
     return schedule
