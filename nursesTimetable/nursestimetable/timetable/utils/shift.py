@@ -15,6 +15,7 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
         'off_count': 0,  # night 근무 후 두 타임 off 처리
         'is_senior': nurse['is_senior']
     } for nurse in nurses}
+
     # 한달
     total_days = (end_date - start_date).days + 1
 
@@ -64,7 +65,6 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
 
         return daily_schedule
 
-
     for day_count in range(total_days):
         current_date = start_date + timedelta(days=day_count)
         available_nurses = [nurse for nurse in nurses if str(nurse['id']) not in vacation_days or current_date.strftime('%Y-%m-%d') not in vacation_days[str(nurse['id'])]]
@@ -87,4 +87,51 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
 
         schedule.append({'date': current_date, 'shifts': daily_schedule})
 
+    # 최소 간호사 수 계산 및 로그 출력
+    min_nurses_needed = calculate_min_nurses(start_date, end_date)
+    print(f"최소 필요한 간호사 수: {min_nurses_needed}명")
+
     return schedule
+
+# 최소 간호사 수 계산 함수 추가
+def calculate_min_nurses(start_date, end_date):
+    total_days = (end_date - start_date).days + 1
+    total_weekends = 0
+    total_weekdays = 0
+    
+    for day_count in range(total_days):
+        current_date = start_date + timedelta(days=day_count)
+        is_weekend = current_date.weekday() >= 5  # 5가 Saturday, 6이 Sunday
+        
+        if is_weekend:
+            total_weekends += 1
+        else:
+            total_weekdays += 1
+
+    # 하루에 필요한 간호사 수
+    weekday_nurses_needed = 8  # 평일: day 3명, evening 3명, night 2명 = 8명
+    weekend_nurses_needed = 6  # 주말: day 2명, evening 2명, night 2명 = 6명
+    
+    # 총 필요한 간호사 근무 횟수
+    total_nurse_shifts_needed = (total_weekdays * weekday_nurses_needed) + (total_weekends * weekend_nurses_needed)
+    
+    # 한 명의 간호사가 한 달에 최대 근무할 수 있는 날 수 (주당 최대 5일 근무, night 근무 후 2회 off 고려)
+    max_work_days_per_nurse = 5 * (total_days // 7)  # 주당 5일 근무 가능한 것을 기준으로 계산
+    
+    # 최소 간호사 수 계산
+    min_nurses_needed = total_nurse_shifts_needed // max_work_days_per_nurse
+    
+    return max(min_nurses_needed, 1)
+
+# 테스트
+from datetime import date
+
+nurses = [{'id': '1', 'is_senior': True}, {'id': '2', 'is_senior': False}]  # 예시 간호사 리스트
+start_date = date(2024, 10, 1)
+end_date = date(2024, 10, 31)
+holidays = []
+vacation_days = {}
+total_off_days = 8
+total_work_days = 23
+
+assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days)
