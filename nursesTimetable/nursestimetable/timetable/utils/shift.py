@@ -1,7 +1,33 @@
 import random
 from datetime import timedelta
 
-def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days):
+# 주말을 계산하는 함수
+def get_weekends(start_weekday, total_days):
+    # 요일을 숫자로 변환 (0: Monday, 6: Sunday)
+    weekdays_map = {
+        'Monday': 0,
+        'Tuesday': 1,
+        'Wednesday': 2,
+        'Thursday': 3,
+        'Friday': 4,
+        'Saturday': 5,
+        'Sunday': 6
+    }
+
+    start_weekday_num = weekdays_map[start_weekday]
+
+    # 주말 날짜를 계산
+    weekends = []
+    for day in range(total_days):
+        current_day = (start_weekday_num + day) % 7
+        if current_day == 5 or current_day == 6:  # 토요일(5) 또는 일요일(6)
+            weekends.append(day + 1)  # day+1은 1일부터 시작하는 날짜를 표현
+
+    return weekends
+
+
+# 간호사 스케줄을 배정하는 함수
+def assign_shifts(nurses, start_date, total_days, holidays, vacation_days, total_off_days, total_work_days, start_weekday):
     schedule = []
 
     # nurse 리스트는 id와 is_senior 속성을 가진다고 가정
@@ -16,8 +42,8 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
         'is_senior': nurse['is_senior']
     } for nurse in nurses}
 
-    # 한달
-    total_days = (end_date - start_date).days + 1
+    # 주말을 계산
+    weekends = get_weekends(start_weekday, total_days)
 
     # 사수와 부사수 배정 규칙을 반영한 근무 가능 여부 판단 함수
     def is_available_for_shift(nurse_id, shift_type):
@@ -67,12 +93,13 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
 
     for day_count in range(total_days):
         current_date = start_date + timedelta(days=day_count)
-        available_nurses = [nurse for nurse in nurses if str(nurse['id']) not in vacation_days or current_date.strftime('%Y-%m-%d') not in vacation_days[str(nurse['id'])]]
 
         # 주말인지 평일인지 확인
-        is_weekend = current_date.weekday() >= 5  # 5가 Saturday, 6이 Sunday
+        is_weekend = (day_count + 1) in weekends
         num_day_evening_nurses = 2 if is_weekend else 3
         num_night_nurses = 2
+
+        available_nurses = [nurse for nurse in nurses if str(nurse['id']) not in vacation_days or current_date.strftime('%Y-%m-%d') not in vacation_days[str(nurse['id'])]]
 
         # off 처리
         for nurse_id in nurse_status:
@@ -88,25 +115,18 @@ def assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_o
         schedule.append({'date': current_date, 'shifts': daily_schedule})
 
     # 최소 간호사 수 계산 및 로그 출력
-    min_nurses_needed = calculate_min_nurses(start_date, end_date)
+    min_nurses_needed = calculate_min_nurses(start_date, total_days)
     print(f"최소 필요한 간호사 수: {min_nurses_needed}명")
 
     return schedule
 
-# 최소 간호사 수 계산 함수 추가
-def calculate_min_nurses(start_date, end_date):
-    total_days = (end_date - start_date).days + 1
-    total_weekends = 0
-    total_weekdays = 0
-    
-    for day_count in range(total_days):
-        current_date = start_date + timedelta(days=day_count)
-        is_weekend = current_date.weekday() >= 5  # 5가 Saturday, 6이 Sunday
-        
-        if is_weekend:
-            total_weekends += 1
-        else:
-            total_weekdays += 1
+# 최소 간호사 수 계산 함수
+def calculate_min_nurses(start_date, total_days):
+    weekends = get_weekends(start_weekday, total_days)
+
+    # 평일과 주말 계산
+    total_weekdays = total_days - len(weekends)
+    total_weekends = len(weekends)
 
     # 하루에 필요한 간호사 수
     weekday_nurses_needed = 8  # 평일: day 3명, evening 3명, night 2명 = 8명
@@ -123,15 +143,18 @@ def calculate_min_nurses(start_date, end_date):
     
     return max(min_nurses_needed, 1)
 
-# 테스트
+# 테스트 데이터
 from datetime import date
 
-nurses = [{'id': '1', 'is_senior': True}, {'id': '2', 'is_senior': False}]  # 예시 간호사 리스트
+nurses = [{'id': 1, 'name': 'Nurse 1', 'is_senior': True, 'vacation_days': []}, 
+          {'id': 2, 'name': 'Nurse 2', 'is_senior': False, 'vacation_days': []}]  # 간호사 예시 리스트
+
 start_date = date(2024, 10, 1)
-end_date = date(2024, 10, 31)
+total_days = 31
 holidays = []
 vacation_days = {}
-total_off_days = 8
-total_work_days = 23
+total_off_days = 10
+total_work_days = 21
+start_weekday = "Tuesday"
 
-assign_shifts(nurses, start_date, end_date, holidays, vacation_days, total_off_days, total_work_days)
+assign_shifts(nurses, start_date, total_days, holidays, vacation_days, total_off_days, total_work_days, start_weekday)
