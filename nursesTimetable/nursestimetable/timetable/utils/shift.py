@@ -148,17 +148,17 @@ def calculate_min_nurses(total_days, weekends):
 
 
 # 프론트엔드에서 들어오는 데이터 예시
-data = {
+# data = {
 
-}
 
-# 스케줄 생성
-assign_shifts(
-    data['nurses'], 
-    data['total_days'], 
-    [],  # holidays가 없는 것으로 가정
-    {nurse['id']: nurse['vacation_days'] for nurse in data['nurses']}, 
-    data['total_off_days'], 
-    data['total_work_days'], 
-    data['start_weekday']
-)
+
+# # 스케줄 생성
+# assign_shifts(
+#     data['nurses'], 
+#     data['total_days'], 
+#     [],  # holidays가 없는 것으로 가정
+#     {nurse['id']: nurse['vacation_days'] for nurse in data['nurses']}, 
+#     data['total_off_days'], 
+#     data['total_work_days'], 
+#     data['start_weekday']
+# )
