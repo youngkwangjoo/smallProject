@@ -88,8 +88,6 @@ def delete_nurses(request):
         return JsonResponse({'message': 'All nurses deleted successfully'}, status=200)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
-from .utils.calculate import calculate_min_nurses
-from .utils.shift import get_weekends  # get_weekends 함수 import
 
 @csrf_exempt
 def calculate_min_nurses_view(request):
@@ -107,6 +105,9 @@ def calculate_min_nurses_view(request):
             start_weekday = data.get('start_weekday', '')
             nurses_data = data.get('nurses', [])
 
+            # 디버깅용 로그 추가
+            print(f"Received data: {data}")
+
             # nurses 리스트에서 필요한 정보를 추출하여 사용
             nurses = [
                 {
@@ -117,15 +118,16 @@ def calculate_min_nurses_view(request):
                 for nurse in nurses_data
             ]
 
-            # 주말 계산
-            weekends = get_weekends(start_weekday, total_days)
+            # 디버깅용 로그 추가
+            print(f"Nurses data processed: {nurses}")
 
             # 최소 간호사 수 계산
             min_nurses_needed = calculate_min_nurses(total_days, total_off_days, total_work_days, nurses)
 
             return JsonResponse({'min_nurses_needed': min_nurses_needed}, status=200)
         except Exception as e:
-            # 에러 발생 시 예외 처리
+            # 에러 발생 시 예외 처리 및 로깅
+            print(f"Error occurred: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
