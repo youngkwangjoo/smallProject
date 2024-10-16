@@ -6,6 +6,7 @@ from .models import Nurse
 from .utils.shift import assign_shifts
 import json
 from .utils.calculate import calculate_min_nurses
+from .utils.shift import get_weekends
 
 
 @csrf_exempt
@@ -96,18 +97,22 @@ def calculate_min_nurses_view(request):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
-        # 프론트엔드로부터 데이터 추출
-        nurses = data.get('nurses', [])
-        total_off_days = int(data.get('total_off_days', 0))
-        total_work_days = int(data.get('total_work_days', 0))
-        total_days = int(data.get('total_days', 0))  # 한 달의 총 일수
-        start_weekday = data.get('start_weekday', '')  # 시작 요일
+        try:
+            total_days = data.get('total_days', 0)
+            total_off_days = data.get('total_off_days', 0)
+            total_work_days = data.get('total_work_days', 0)
+            start_weekday = data.get('start_weekday', '')
+            nurses = data.get('nurses', [])
 
-        # 최소 간호사 수 계산
-        weekends = []  # 주말 계산하는 로직을 넣거나 전달받을 수 있음
-        min_nurses_needed = calculate_min_nurses(total_days, weekends, nurses)
+            # 주말 계산
+            weekends = get_weekends(start_weekday, total_days)
 
-        # 계산된 최소 간호사 수를 JSON으로 응답
-        return JsonResponse({'min_nurses_needed': min_nurses_needed}, safe=False)
+            # 최소 간호사 수 계산 호출
+            min_nurses_needed = calculate_min_nurses(total_days, weekends, nurses)
+
+            return JsonResponse({'min_nurses_needed': min_nurses_needed}, status=200)
+        except Exception as e:
+            # 에러 발생 시 예외 처리
+            return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
