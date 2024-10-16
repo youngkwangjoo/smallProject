@@ -122,9 +122,9 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
         # 스케줄에 현재 날짜의 배정된 근무 추가
         schedule.append({'date': current_date, 'shifts': daily_schedule})
 
-    # 최소 간호사 수 계산 및 출력
-    min_nurses_needed = calculate_min_nurses(total_days, weekends)
-    print(f"최소 필요한 간호사 수: {min_nurses_needed}명")
+    # # 최소 간호사 수 계산 및 출력
+    # min_nurses_needed = calculate_min_nurses(total_days, weekends)
+    # print(f"최소 필요한 간호사 수: {min_nurses_needed}명")
 
     # 각 간호사의 근무 횟수 출력
     for nurse_id, status in nurse_status.items():
