@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-&*dsv@_1y-6r*980f4$oza9zwqph$=2c%^1)l%(**94_(t9dub'
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["api.schdule.site", "www.schdule.site", "127.0.0.1", "localhost"]
 
@@ -80,8 +80,8 @@ DATABASES = {
 #     }
 # }
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+# STATIC_URL = '/static/'
+# STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'
