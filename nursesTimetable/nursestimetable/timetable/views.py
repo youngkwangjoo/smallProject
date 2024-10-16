@@ -6,7 +6,7 @@ from .models import Nurse
 from .utils.shift import assign_shifts
 import json
 from .utils.calculate import calculate_min_nurses
-from utils.common import get_weekends
+from .utils.common import get_weekends
 
 
 @csrf_exempt
