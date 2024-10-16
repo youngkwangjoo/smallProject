@@ -1,14 +1,15 @@
-# utils/calculate.py
+def calculate_min_nurses(total_days, total_off_days, total_work_days, nurses):
+    # 주어진 total_days에서 휴무일을 제외하고 실제 근무일 계산
+    total_working_days = total_days - total_off_days
 
-def calculate_min_nurses(total_days, weekends, nurses):
-    total_weekdays = total_days - len(weekends)
-    total_weekends = len(weekends)
+    # 평일과 주말에 필요한 간호사 수 정의
+    weekday_nurses_needed = 8  # 평일: 아침 3명, 저녁 3명, 야간 2명 = 8명 필요
+    weekend_nurses_needed = 6  # 주말: 아침 2명, 저녁 2명, 야간 2명 = 6명 필요
 
-    weekday_nurses_needed = 8
-    weekend_nurses_needed = 6
+    # 실제 필요한 간호사 근무 횟수 계산 (근무일 기준)
+    total_nurse_shifts_needed = total_working_days * weekday_nurses_needed
 
-    total_nurse_shifts_needed = (total_weekdays * weekday_nurses_needed) + (total_weekends * weekend_nurses_needed)
-
+    # 각 간호사의 상태 초기화
     nurse_status = {nurse['id']: {
         'total_shifts': 0,
         'day_shifts': 0,
@@ -20,6 +21,7 @@ def calculate_min_nurses(total_days, weekends, nurses):
         'is_senior': nurse['is_senior']
     } for nurse in nurses}
 
+    # 각 간호사가 특정 시프트에 배정될 수 있는지 확인하는 함수
     def is_available_for_shift(nurse_id, shift_type):
         nurse = nurse_status[nurse_id]
         if nurse['off_count'] > 0:
@@ -32,18 +34,22 @@ def calculate_min_nurses(total_days, weekends, nurses):
             return False
         return True
 
+    # 한 간호사가 주당 최대 근무 가능한 일수와 시프트 수
     max_work_days_per_nurse = 5
-    total_max_shifts_per_nurse = max_work_days_per_nurse * 3
+    total_max_shifts_per_nurse = max_work_days_per_nurse * 3  # 하루에 3개의 시프트
 
+    # 필요한 최소 간호사 수를 계산
     min_nurses_needed = total_nurse_shifts_needed // total_max_shifts_per_nurse
+    if total_nurse_shifts_needed % total_max_shifts_per_nurse != 0:
+        min_nurses_needed += 1  # 나머지 시프트가 있을 경우 간호사 한 명 추가 필요
 
+    # 각 간호사의 근무 배정을 시뮬레이션하여 최소 인원 계산
     for nurse_id in nurse_status:
         assigned_shifts = 0
-        for day in range(total_days):
-            is_weekend = day + 1 in weekends
-            day_shifts_needed = 2 if is_weekend else 3
+        for day in range(total_working_days):
+            day_shifts_needed = 3  # 평일 기준 아침, 저녁, 야간 시프트 각각 3명 필요
             evening_shifts_needed = day_shifts_needed
-            night_shifts_needed = 2
+            night_shifts_needed = 2  # 야간 시프트 2명 필요
 
             if assigned_shifts < total_max_shifts_per_nurse:
                 for shift_type, num_nurses_needed in [('day', day_shifts_needed), ('evening', evening_shifts_needed), ('night', night_shifts_needed)]:
