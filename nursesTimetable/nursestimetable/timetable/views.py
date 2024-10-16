@@ -14,6 +14,7 @@ def generate_schedule(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
+            print(f"Received data: {data}")  # 요청 데이터를 출력하여 확인
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
@@ -23,6 +24,8 @@ def generate_schedule(request):
         total_work_days = int(data.get('total_work_days', 0))
         total_days = int(data.get('total_days', 0))
         start_weekday = data.get('start_weekday', '')
+
+        print(f"Total Days: {total_days}, Start Weekday: {start_weekday}")  # 추출된 데이터 확인
 
         # 간호사 객체 생성 및 휴가 정보 처리
         nurses = []
@@ -36,6 +39,8 @@ def generate_schedule(request):
                     'is_senior': nurse_data['is_senior']
                 }
             )
+            print(f"Nurse processed: {nurse.name}, Senior: {nurse.is_senior}")  # 간호사 정보 확인
+
             vacation_days[str(nurse.id)] = nurse_data.get('vacation_days', [])
             nurse_info = {
                 'id': nurse.id,
@@ -47,7 +52,11 @@ def generate_schedule(request):
             nurse_info_dict[nurse.id] = nurse_info  # 간호사 ID를 키로 해서 간호사 정보 저장
 
         # 스케줄 생성
-        schedule = assign_shifts(nurses, total_days, [], vacation_days, total_off_days, total_work_days, start_weekday)
+        try:
+            schedule = assign_shifts(nurses, total_days, [], vacation_days, total_off_days, total_work_days, start_weekday)
+            print(f"Schedule created: {schedule}")  # 스케줄 생성 후 확인
+        except Exception as e:
+            print(f"Error during scheduling: {str(e)}")  # 스케줄 생성 중 에러 로그
 
         # 간호사 상세 정보를 포함하여 schedule 데이터를 변환
         schedule_with_details = []
@@ -68,9 +77,12 @@ def generate_schedule(request):
             }
             schedule_with_details.append(day_data)
 
+        print(f"Final schedule with details: {schedule_with_details}")  # 최종 스케줄 확인
+
         return JsonResponse(schedule_with_details, safe=False)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 
 @csrf_exempt
