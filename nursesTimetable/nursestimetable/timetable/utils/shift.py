@@ -1,7 +1,7 @@
 import random
 from datetime import timedelta
 from .calculate import calculate_min_nurses
-from utils.common import get_weekends
+from .common import get_weekends
 
 # 간호사 스케줄을 배정하는 함수
 # 간호사 목록, 총 일수, 휴일, 휴가일, 총 휴무일, 총 근무일, 시작 요일을 입력받아 스케줄을 생성

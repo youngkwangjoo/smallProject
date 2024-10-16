@@ -1,4 +1,4 @@
-from utils.common import get_weekends # shift.py에서 get_weekends 함수 가져오기
+from .common import get_weekends # shift.py에서 get_weekends 함수 가져오기
 
 def calculate_min_nurses(total_days, total_off_days, total_work_days, start_weekday, nurses):
     # 주어진 total_days에서 휴무일을 제외하고 실제 근무일 계산
