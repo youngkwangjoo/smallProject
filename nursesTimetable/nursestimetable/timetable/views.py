@@ -98,16 +98,27 @@ def calculate_min_nurses_view(request):
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
         try:
+            # POST 요청에서 데이터 추출
             total_days = data.get('total_days', 0)
             total_off_days = data.get('total_off_days', 0)
             total_work_days = data.get('total_work_days', 0)
             start_weekday = data.get('start_weekday', '')
-            nurses = data.get('nurses', [])
+            nurses_data = data.get('nurses', [])
+
+            # nurses 리스트에서 필요한 정보를 추출하여 사용
+            nurses = [
+                {
+                    'id': nurse['id'],
+                    'is_senior': nurse['is_senior'],
+                    'vacation_days': nurse.get('vacation_days', [])
+                }
+                for nurse in nurses_data
+            ]
 
             # 주말 계산
             weekends = get_weekends(start_weekday, total_days)
 
-            # 최소 간호사 수 계산 호출
+            # 최소 간호사 수 계산
             min_nurses_needed = calculate_min_nurses(total_days, weekends, nurses)
 
             return JsonResponse({'min_nurses_needed': min_nurses_needed}, status=200)
