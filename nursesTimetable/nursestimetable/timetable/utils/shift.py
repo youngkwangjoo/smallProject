@@ -129,22 +129,22 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
 
 # 최소 간호사 수를 계산하는 함수
 # 평일과 주말에 필요한 간호사 수를 계산
-def calculate_min_nurses(total_days, weekends):
-    total_weekdays = total_days - len(weekends)  # 평일 수
-    total_weekends = len(weekends)  # 주말 수
+# def calculate_min_nurses(total_days, weekends):
+#     total_weekdays = total_days - len(weekends)  # 평일 수
+#     total_weekends = len(weekends)  # 주말 수
 
-    # 평일과 주말에 필요한 간호사 수 정의
-    weekday_nurses_needed = 8  # 평일: 아침 3명, 저녁 3명, 야간 2명 = 8명 필요
-    weekend_nurses_needed = 6  # 주말: 아침 2명, 저녁 2명, 야간 2명 = 6명 필요
+#     # 평일과 주말에 필요한 간호사 수 정의
+#     weekday_nurses_needed = 8  # 평일: 아침 3명, 저녁 3명, 야간 2명 = 8명 필요
+#     weekend_nurses_needed = 6  # 주말: 아침 2명, 저녁 2명, 야간 2명 = 6명 필요
     
-    # 총 필요한 근무 횟수 계산
-    total_nurse_shifts_needed = (total_weekdays * weekday_nurses_needed) + (total_weekends * weekend_nurses_needed)
+#     # 총 필요한 근무 횟수 계산
+#     total_nurse_shifts_needed = (total_weekdays * weekday_nurses_needed) + (total_weekends * weekend_nurses_needed)
 
-    # 한 간호사가 주당 최대 5일 근무 가능
-    max_work_days_per_nurse = 5 * (total_days // 7)
-    min_nurses_needed = total_nurse_shifts_needed // max_work_days_per_nurse
+#     # 한 간호사가 주당 최대 5일 근무 가능
+#     max_work_days_per_nurse = 5 * (total_days // 7)
+#     min_nurses_needed = total_nurse_shifts_needed // max_work_days_per_nurse
     
-    return max(min_nurses_needed, 1)  # 최소 1명 이상 필요
+#     return max(min_nurses_needed, 1)  # 최소 1명 이상 필요
 
 
 # 프론트엔드에서 들어오는 데이터 예시
