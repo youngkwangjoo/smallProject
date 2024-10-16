@@ -1,33 +1,7 @@
 import random
 from datetime import timedelta
 from .calculate import calculate_min_nurses
-
-
-# 주말을 계산하는 함수
-# 시작 요일과 전체 일수를 받아 주말 날짜(토요일, 일요일)를 리스트로 반환
-def get_weekends(start_weekday, total_days):
-    # 요일을 숫자로 변환하기 위한 매핑
-    weekdays_map = {
-        'Monday': 0,
-        'Tuesday': 1,
-        'Wednesday': 2,
-        'Thursday': 3,
-        'Friday': 4,
-        'Saturday': 5,
-        'Sunday': 6
-    }
-
-    # 시작 요일을 숫자로 변환
-    start_weekday_num = weekdays_map[start_weekday]
-    weekends = []
-    
-    # 전체 일수 동안 각 날짜의 요일을 계산하여 토요일(5) 또는 일요일(6)인 경우 리스트에 추가
-    for day in range(total_days):
-        current_day = (start_weekday_num + day) % 7
-        if current_day == 5 or current_day == 6:  # 토요일 또는 일요일
-            weekends.append(day + 1)
-    return weekends
-
+from utils.common import get_weekends
 
 # 간호사 스케줄을 배정하는 함수
 # 간호사 목록, 총 일수, 휴일, 휴가일, 총 휴무일, 총 근무일, 시작 요일을 입력받아 스케줄을 생성
