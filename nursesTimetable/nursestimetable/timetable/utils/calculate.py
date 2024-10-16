@@ -1,8 +1,11 @@
-# utils/calculate.py
+from .shift import get_weekends  # shift.py에서 get_weekends 함수 가져오기
 
-def calculate_min_nurses(total_days, total_off_days, total_work_days, nurses):
+def calculate_min_nurses(total_days, total_off_days, total_work_days, start_weekday, nurses):
     # 주어진 total_days에서 휴무일을 제외하고 실제 근무일 계산
     total_working_days = total_days - total_off_days
+
+    # 주말을 계산
+    weekends = get_weekends(start_weekday, total_days)
 
     # 평일과 주말에 필요한 간호사 수 정의
     weekday_nurses_needed = 8  # 평일: 아침 3명, 저녁 3명, 야간 2명 = 8명 필요
