@@ -102,11 +102,8 @@ def calculate_min_nurses_view(request):
             total_days = data.get('total_days', 0)
             total_off_days = data.get('total_off_days', 0)
             total_work_days = data.get('total_work_days', 0)
-            start_weekday = data.get('start_weekday', '')
+            start_weekday = data.get('start_weekday', '')  # start_weekday 추가
             nurses_data = data.get('nurses', [])
-
-            # 디버깅용 로그 추가
-            print(f"Received data: {data}")
 
             # nurses 리스트에서 필요한 정보를 추출하여 사용
             nurses = [
@@ -118,16 +115,12 @@ def calculate_min_nurses_view(request):
                 for nurse in nurses_data
             ]
 
-            # 디버깅용 로그 추가
-            print(f"Nurses data processed: {nurses}")
-
             # 최소 간호사 수 계산
-            min_nurses_needed = calculate_min_nurses(total_days, total_off_days, total_work_days, nurses)
+            min_nurses_needed = calculate_min_nurses(total_days, total_off_days, total_work_days, start_weekday, nurses)
 
             return JsonResponse({'min_nurses_needed': min_nurses_needed}, status=200)
         except Exception as e:
-            # 에러 발생 시 예외 처리 및 로깅
-            print(f"Error occurred: {str(e)}")
+            # 에러 발생 시 예외 처리
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
