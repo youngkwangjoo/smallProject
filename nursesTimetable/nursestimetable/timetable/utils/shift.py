@@ -64,6 +64,7 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
         return True
 
     # 시프트 타입(아침, 저녁, 야간)에 대해 간호사 배정하는 함수
+# 연속 근무일수 초기화 로직 추가
     def assign_shift_for_shift_type(current_date, available_nurses, shift_type, num_nurses_needed):
         daily_schedule = []
         # 시니어 간호사 리스트와 주니어 간호사 리스트를 구분하여 배정
@@ -76,20 +77,26 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
         else:
             assigned_seniors = []
 
-        # 나머지 간호사들 배정 (시니어를 제외한 나머지)
+        # 나머지 간호사들 배정
         remaining_nurses_needed = num_nurses_needed - len(assigned_seniors)
         assigned_others = random.sample(other_nurses, min(remaining_nurses_needed, len(other_nurses)))
         assigned_nurses = assigned_seniors + assigned_others
 
-        # 배정된 간호사들의 근무 상태 업데이트
         for nurse in assigned_nurses:
             nurse_status[nurse['id']]['total_shifts'] += 1
             nurse_status[nurse['id']][f'{shift_type}_shifts'] += 1
             nurse_status[nurse['id']]['last_shift'] = shift_type
-            nurse_status[nurse['id']]['consecutive_days'] += 1  # 배정 시 연속 근무일수 증가
+            nurse_status[nurse['id']]['consecutive_days'] += 1
+
+            # 연속 근무일수가 5일인 경우, off_count를 증가하고 연속 근무일수를 초기화
+            if nurse_status[nurse['id']]['consecutive_days'] >= 5:
+                nurse_status[nurse['id']]['off_count'] = 1  # 휴무
+                nurse_status[nurse['id']]['consecutive_days'] = 0  # 연속 근무일 초기화
+
             daily_schedule.append({'nurse': nurse['id'], 'shift': shift_type})
 
         return daily_schedule
+
 
     # 총 일수 동안 매일 스케줄을 생성
     for day_count in range(total_days):
