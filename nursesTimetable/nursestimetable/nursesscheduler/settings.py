@@ -7,7 +7,8 @@ SECRET_KEY = 'django-insecure-&*dsv@_1y-6r*980f4$oza9zwqph$=2c%^1)l%(**94_(t9dub
 
 DEBUG = False
 
-ALLOWED_HOSTS = ["api.schdule.site", "www.schdule.site"]
+ALLOWED_HOSTS = ["api.schdule.site", "www.schdule.site", "127.0.0.1", "localhost"]
+
 
 
 ROOT_URLCONF = 'nursesscheduler.urls'
