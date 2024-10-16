@@ -34,16 +34,15 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
 
     # 각 간호사 상태 초기화
     nurse_status = {nurse['id']: {
-        'total_shifts': 0,         # 총 근무 횟수
-        'day_shifts': 0,           # 아침 근무 횟수
-        'evening_shifts': 0,       # 저녁 근무 횟수
-        'night_shifts': 0,         # 야간 근무 횟수
-        'consecutive_days': 0,     # 연속 근무일수
-        'last_shift': None,        # 마지막 배정된 근무
-        'off_count': 0,            # 휴무일 수
-        'is_senior': nurse['is_senior']  # 시니어 여부
+        'total_shifts': 0,
+        'day_shifts': 0,
+        'evening_shifts': 0,
+        'night_shifts': 0,
+        'consecutive_days': 0,
+        'last_shift': None,
+        'off_count': 0,
+        'is_senior': nurse['is_senior']
     } for nurse in nurses}
-
     # 주말 계산
     weekends = get_weekends(start_weekday, total_days)
 

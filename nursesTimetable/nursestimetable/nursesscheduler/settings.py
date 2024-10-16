@@ -108,3 +108,22 @@ TEMPLATES = [
         },
     }
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',  # ERROR 이상의 로그를 기록
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'error.log',  # 로그 파일 경로
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
