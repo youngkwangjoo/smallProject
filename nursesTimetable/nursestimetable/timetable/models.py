@@ -24,5 +24,5 @@ class Shift(models.Model):
     
     nurse = models.ForeignKey(Nurse, on_delete=models.CASCADE)  # 근무 간호사
     date = models.DateField()  # 근무 날짜
-    shift_type = models.CharField(max_length=10, choices=SHIFT_CHOICES)  # 근무 종류
+    shift_type = models.CharField(max_length=15, choices=SHIFT_CHOICES)  # 근무 종류
 
