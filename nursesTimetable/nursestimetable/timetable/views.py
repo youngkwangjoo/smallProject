@@ -72,9 +72,17 @@ def generate_schedule(request):
 
 
 @csrf_exempt
+@csrf_exempt
 def delete_nurses(request):
+    if request.method == 'OPTIONS':  # Preflight 요청 처리
+        response = JsonResponse({'message': 'Preflight request successful'})
+        response['Access-Control-Allow-Origin'] = 'https://www.schdule.site'
+        response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+        return response
+    
     if request.method == 'DELETE':
-        # 모든 간호사를 삭제
+        # 간호사 삭제 로직
         Nurse.objects.all().delete()
         return JsonResponse({'message': 'All nurses deleted successfully'}, status=200)
 
