@@ -28,6 +28,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # 개발 중 프론트엔드 URL
     "https://www.schdule.site",  # 배포된 프론트엔드 URL
+    "https://api.schdule.site"
     "http://localhost:8000"
 ]
 
