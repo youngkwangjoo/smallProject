@@ -119,7 +119,7 @@ def calculate_min_nurses_view(request):
             weekends = get_weekends(start_weekday, total_days)
 
             # 최소 간호사 수 계산
-            min_nurses_needed = calculate_min_nurses(total_days, weekends, nurses)
+            min_nurses_needed = calculate_min_nurses(total_days, total_off_days, total_work_days, nurses)
 
             return JsonResponse({'min_nurses_needed': min_nurses_needed}, status=200)
         except Exception as e:

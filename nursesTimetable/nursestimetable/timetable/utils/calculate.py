@@ -1,4 +1,6 @@
-def calculate_min_nurses(total_days, total_off_days, total_work_days, nurses):
+# utils/calculate.py
+
+def calculate_min_nurses(total_days, total_off_days, weekends, nurses):
     # 주어진 total_days에서 휴무일을 제외하고 실제 근무일 계산
     total_working_days = total_days - total_off_days
 
@@ -7,7 +9,8 @@ def calculate_min_nurses(total_days, total_off_days, total_work_days, nurses):
     weekend_nurses_needed = 6  # 주말: 아침 2명, 저녁 2명, 야간 2명 = 6명 필요
 
     # 실제 필요한 간호사 근무 횟수 계산 (근무일 기준)
-    total_nurse_shifts_needed = total_working_days * weekday_nurses_needed
+    total_nurse_shifts_needed = (total_working_days - len(weekends)) * weekday_nurses_needed
+    total_nurse_shifts_needed += len(weekends) * weekend_nurses_needed  # 주말 계산 추가
 
     # 각 간호사의 상태 초기화
     nurse_status = {nurse['id']: {
@@ -41,15 +44,22 @@ def calculate_min_nurses(total_days, total_off_days, total_work_days, nurses):
     # 필요한 최소 간호사 수를 계산
     min_nurses_needed = total_nurse_shifts_needed // total_max_shifts_per_nurse
     if total_nurse_shifts_needed % total_max_shifts_per_nurse != 0:
-        min_nurses_needed += 1  # 나머지 시프트가 있을 경우 간호사 한 명 추가 필요
+        min_nurses_needed += 1  # 나머지 시프트가 있을
 
     # 각 간호사의 근무 배정을 시뮬레이션하여 최소 인원 계산
     for nurse_id in nurse_status:
         assigned_shifts = 0
         for day in range(total_working_days):
-            day_shifts_needed = 3  # 평일 기준 아침, 저녁, 야간 시프트 각각 3명 필요
-            evening_shifts_needed = day_shifts_needed
-            night_shifts_needed = 2  # 야간 시프트 2명 필요
+            # 해당 날짜가 주말인지 확인
+            is_weekend = day + 1 in weekends
+            if is_weekend:
+                day_shifts_needed = weekend_nurses_needed // 3  # 주말은 아침, 저녁, 야간 2명씩 배정
+                evening_shifts_needed = day_shifts_needed
+                night_shifts_needed = 2
+            else:
+                day_shifts_needed = weekday_nurses_needed // 3  # 평일은 아침, 저녁 3명씩, 야간 2명
+                evening_shifts_needed = day_shifts_needed
+                night_shifts_needed = 2
 
             if assigned_shifts < total_max_shifts_per_nurse:
                 for shift_type, num_nurses_needed in [('day', day_shifts_needed), ('evening', evening_shifts_needed), ('night', night_shifts_needed)]:
@@ -60,8 +70,10 @@ def calculate_min_nurses(total_days, total_off_days, total_work_days, nurses):
                         nurse_status[nurse_id]['consecutive_days'] += 1
                         nurse_status[nurse_id]['last_shift'] = shift_type
 
+            # 5일 연속 근무한 간호사에게 휴무 부여
             if nurse_status[nurse_id]['consecutive_days'] >= 5:
                 nurse_status[nurse_id]['off_count'] += 1
                 nurse_status[nurse_id]['consecutive_days'] = 0
 
+    # 최소 필요한 간호사 수 반환
     return max(min_nurses_needed, 1)
