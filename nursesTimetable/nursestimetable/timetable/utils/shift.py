@@ -1,5 +1,7 @@
 import random
 from datetime import timedelta
+from .calculate import calculate_min_nurses
+
 
 # 주말을 계산하는 함수
 # 시작 요일과 전체 일수를 받아 주말 날짜(토요일, 일요일)를 리스트로 반환
@@ -122,49 +124,14 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
         # 스케줄에 현재 날짜의 배정된 근무 추가
         schedule.append({'date': current_date, 'shifts': daily_schedule})
 
-    # # 최소 간호사 수 계산 및 출력
-    # min_nurses_needed = calculate_min_nurses(total_days, weekends)
-    # print(f"최소 필요한 간호사 수: {min_nurses_needed}명")
-
     # 각 간호사의 근무 횟수 출력
     for nurse_id, status in nurse_status.items():
         print(f"Nurse {nurse_id} - 총 근무 횟수: {status['total_shifts']}, Day: {status['day_shifts']}, Evening: {status['evening_shifts']}, Night: {status['night_shifts']}")
 
+    min_nurses_needed = calculate_min_nurses(total_days, weekends, nurses)
+    print(f"최소 필요한 간호사 수: {min_nurses_needed}명")
+
     return schedule
 
 
-# 최소 간호사 수를 계산하는 함수
-# 평일과 주말에 필요한 간호사 수를 계산
-# def calculate_min_nurses(total_days, weekends):
-#     total_weekdays = total_days - len(weekends)  # 평일 수
-#     total_weekends = len(weekends)  # 주말 수
 
-#     # 평일과 주말에 필요한 간호사 수 정의
-#     weekday_nurses_needed = 8  # 평일: 아침 3명, 저녁 3명, 야간 2명 = 8명 필요
-#     weekend_nurses_needed = 6  # 주말: 아침 2명, 저녁 2명, 야간 2명 = 6명 필요
-    
-#     # 총 필요한 근무 횟수 계산
-#     total_nurse_shifts_needed = (total_weekdays * weekday_nurses_needed) + (total_weekends * weekend_nurses_needed)
-
-#     # 한 간호사가 주당 최대 5일 근무 가능
-#     max_work_days_per_nurse = 5 * (total_days // 7)
-#     min_nurses_needed = total_nurse_shifts_needed // max_work_days_per_nurse
-    
-#     return max(min_nurses_needed, 1)  # 최소 1명 이상 필요
-
-
-# 프론트엔드에서 들어오는 데이터 예시
-# data = {
-
-
-
-# # 스케줄 생성
-# assign_shifts(
-#     data['nurses'], 
-#     data['total_days'], 
-#     [],  # holidays가 없는 것으로 가정
-#     {nurse['id']: nurse['vacation_days'] for nurse in data['nurses']}, 
-#     data['total_off_days'], 
-#     data['total_work_days'], 
-#     data['start_weekday']
-# )
