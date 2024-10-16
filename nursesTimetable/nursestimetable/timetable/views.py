@@ -24,6 +24,7 @@ def generate_schedule(request):
         # 간호사 객체 생성 및 휴가 정보 처리
         nurses = []
         vacation_days = {}
+        nurse_info_dict = {}  # 간호사 정보 딕셔너리로 저장
         for nurse_data in nurse_list:
             nurse, created = Nurse.objects.get_or_create(
                 id=nurse_data['id'],
@@ -33,19 +34,41 @@ def generate_schedule(request):
                 }
             )
             vacation_days[str(nurse.id)] = nurse_data.get('vacation_days', [])
-            nurses.append({
+            nurse_info = {
                 'id': nurse.id,
                 'name': nurse.name,
                 'is_senior': nurse.is_senior,
                 'vacation_days': vacation_days[str(nurse.id)]
-            })
+            }
+            nurses.append(nurse_info)
+            nurse_info_dict[nurse.id] = nurse_info  # 간호사 ID를 키로 해서 간호사 정보 저장
 
         # 스케줄 생성
         schedule = assign_shifts(nurses, total_days, [], vacation_days, total_off_days, total_work_days, start_weekday)
 
-        return JsonResponse(schedule, safe=False)
+        # 간호사 상세 정보를 포함하여 schedule 데이터를 변환
+        schedule_with_details = []
+        for day_schedule in schedule:
+            day_data = {
+                'date': day_schedule['date'],
+                'shifts': [
+                    {
+                        'nurse': {
+                            'id': nurse_info_dict[shift['nurse']]['id'],
+                            'name': nurse_info_dict[shift['nurse']]['name'],
+                            'is_senior': nurse_info_dict[shift['nurse']]['is_senior'],
+                        },
+                        'shift': shift['shift']
+                    }
+                    for shift in day_schedule['shifts']
+                ]
+            }
+            schedule_with_details.append(day_data)
+
+        return JsonResponse(schedule_with_details, safe=False)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 
 @csrf_exempt
