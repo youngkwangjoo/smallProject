@@ -72,8 +72,6 @@ def generate_schedule(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-
-@csrf_exempt
 @csrf_exempt
 def delete_nurses(request):
     if request.method == 'OPTIONS':  # Preflight 요청 처리
@@ -90,7 +88,7 @@ def delete_nurses(request):
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-
+@csrf_exempt
 def calculate_min_nurses_view(request):
     if request.method == 'POST':
         try:
