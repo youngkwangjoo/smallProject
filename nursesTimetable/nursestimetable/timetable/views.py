@@ -88,6 +88,8 @@ def delete_nurses(request):
         return JsonResponse({'message': 'All nurses deleted successfully'}, status=200)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+from .utils.calculate import calculate_min_nurses
+from .utils.shift import get_weekends  # get_weekends 함수 import
 
 @csrf_exempt
 def calculate_min_nurses_view(request):
