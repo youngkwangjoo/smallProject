@@ -54,7 +54,6 @@ def generate_schedule(request):
         # 스케줄 생성
         try:
             schedule = assign_shifts(nurses, total_days, [], vacation_days, total_off_days, total_work_days, start_weekday)
-            print(f"Schedule created: {schedule}")  # 스케줄 생성 후 확인
         except Exception as e:
             print(f"Error during scheduling: {str(e)}")  # 스케줄 생성 중 에러 로그
 
@@ -76,8 +75,7 @@ def generate_schedule(request):
                 ]
             }
             schedule_with_details.append(day_data)
-
-        print(f"Final schedule with details: {schedule_with_details}")  # 최종 스케줄 확인
+ # 최종 스케줄 확인
 
         return JsonResponse(schedule_with_details, safe=False)
 
