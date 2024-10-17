@@ -35,10 +35,20 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
             return False
         return True
 
+    # 최소 근무 횟수 기준으로 간호사들을 균등하게 배정
+    def balance_shifts():
+        total_shifts_needed = total_work_days * 3
+        avg_shifts_per_nurse = total_shifts_needed // len(nurses)
+        # 근무 횟수가 적은 간호사에게 추가 근무 할당
+        for nurse_id, status in nurse_status.items():
+            if status['total_shifts'] < avg_shifts_per_nurse:
+                status['off_count'] = 0  # 추가 근무를 위해 off 상태 해제
+            else:
+                status['off_count'] = 1  # 근무가 충분한 간호사는 잠시 배제
+
     # 시프트 배정 로직
     def assign_shift_for_shift_type(current_date, available_nurses, shift_type, num_nurses_needed):
         daily_schedule = []
-        # 시니어 및 주니어 간호사 리스트 구분
         senior_nurses = [nurse for nurse in available_nurses if nurse_status[nurse['id']]['is_senior'] and is_available_for_shift(nurse['id'], shift_type)]
         other_nurses = [nurse for nurse in available_nurses if not nurse_status[nurse['id']]['is_senior'] and is_available_for_shift(nurse['id'], shift_type)]
 
@@ -54,7 +64,6 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
             nurse_status[nurse['id']]['last_shift'] = shift_type
             nurse_status[nurse['id']]['consecutive_days'] += 1
 
-            # 연속 근무일수가 5일인 경우, off_count를 증가하고 연속 근무일수를 초기화
             if nurse_status[nurse['id']]['consecutive_days'] >= 5:
                 nurse_status[nurse['id']]['off_count'] = 1
                 nurse_status[nurse['id']]['consecutive_days'] = 0
@@ -72,6 +81,9 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
 
         # 휴가 중이 아닌 간호사 필터링
         available_nurses = [nurse for nurse in nurses if str(nurse['id']) not in vacation_days or current_date not in vacation_days[str(nurse['id'])]]
+
+        # 연속 근무일수 체크 및 연속 근무 제한 로직 적용
+        balance_shifts()  # 불균형 해소를 위한 근무 횟수 균형 조정
 
         # 휴무 상태 업데이트
         for nurse_id in nurse_status:
