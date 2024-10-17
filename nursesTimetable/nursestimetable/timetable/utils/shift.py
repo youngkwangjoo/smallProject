@@ -48,32 +48,44 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
         
         return senior_nurses_sorted, junior_nurses_sorted
 
-    # 시프트 배정 로직 (근무 횟수가 적은 간호사 우선 배정 및 사수/부사수 균형 유지)
+        # 시프트 배정 로직 (근무 횟수가 적은 간호사 우선 배정 및 사수/부사수 균형 유지)
     def assign_shift_for_shift_type(current_date, available_nurses, shift_type, num_nurses_needed):
         daily_schedule = []
-        
-        # 사수와 부사수 간 균형을 유지한 간호사 리스트
-        senior_nurses_sorted, junior_nurses_sorted = balance_nurse_types(available_nurses)
 
-        # 시니어 간호사 1명 배정
-        assigned_seniors = senior_nurses_sorted[:1]  # 근무 횟수가 적은 시니어 간호사 배정
-        remaining_nurses_needed = num_nurses_needed - len(assigned_seniors)
-        assigned_others = junior_nurses_sorted[:remaining_nurses_needed]  # 근무 횟수가 적은 주니어 간호사 배정
-        assigned_nurses = assigned_seniors + assigned_others
+        # 1. 사수 중 근무 횟수가 적은 순으로 정렬
+        senior_nurses = sorted([nurse for nurse in available_nurses if nurse_status[nurse['id']]['is_senior'] and is_available_for_shift(nurse['id'], shift_type)],
+                            key=lambda x: nurse_status[x['id']]['total_shifts'])
 
-        for nurse in assigned_nurses:
-            nurse_status[nurse['id']]['total_shifts'] += 1
-            nurse_status[nurse['id']][f'{shift_type}_shifts'] += 1
-            nurse_status[nurse['id']]['last_shift'] = shift_type
-            nurse_status[nurse['id']]['consecutive_days'] += 1
+        # 2. 전체 간호사 중 근무 횟수가 적은 순으로 정렬 (사수 포함)
+        all_nurses_sorted = sorted([nurse for nurse in available_nurses if is_available_for_shift(nurse['id'], shift_type)],
+                                key=lambda x: nurse_status[x['id']]['total_shifts'])
 
-            if nurse_status[nurse['id']]['consecutive_days'] >= 5:
-                nurse_status[nurse['id']]['off_count'] = 1
-                nurse_status[nurse['id']]['consecutive_days'] = 0
+        # 3. 사수 1명 배정 (근무가 가장 적은 사수)
+        if senior_nurses:
+            assigned_seniors = senior_nurses[:1]  # 근무가 가장 적은 사수 1명 선택
+            remaining_nurses_needed = num_nurses_needed - len(assigned_seniors)
+            
+            # 4. 나머지 인원은 전체 간호사 중에서 근무 횟수가 적은 간호사 배정
+            assigned_others = all_nurses_sorted[:remaining_nurses_needed]
 
-            daily_schedule.append({'nurse': nurse['id'], 'shift': shift_type})
+            # 5. 배정된 간호사들
+            assigned_nurses = assigned_seniors + assigned_others
+
+            # 6. 간호사 상태 업데이트 및 근무 배정
+            for nurse in assigned_nurses:
+                nurse_status[nurse['id']]['total_shifts'] += 1
+                nurse_status[nurse['id']][f'{shift_type}_shifts'] += 1
+                nurse_status[nurse['id']]['last_shift'] = shift_type
+                nurse_status[nurse['id']]['consecutive_days'] += 1
+
+                if nurse_status[nurse['id']]['consecutive_days'] >= 5:
+                    nurse_status[nurse['id']]['off_count'] = 1
+                    nurse_status[nurse['id']]['consecutive_days'] = 0
+
+                daily_schedule.append({'nurse': nurse['id'], 'shift': shift_type})
 
         return daily_schedule
+
 
     # 총 일수 동안 매일 스케줄을 생성
     for day_count in range(total_days):
