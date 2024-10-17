@@ -29,6 +29,8 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
             return False
         if nurse['consecutive_days'] >= 5:
             return False
+        if nurse['total_shifts'] >= total_work_days:  # 총 근무 횟수가 초과되지 않도록 제한
+            return False
         if shift_type == 'day' and nurse['last_shift'] == 'evening':
             return False
         if shift_type == 'evening' and nurse['last_shift'] == 'night':
@@ -39,12 +41,11 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
     def balance_shifts():
         total_shifts_needed = total_work_days * 3
         avg_shifts_per_nurse = total_shifts_needed // len(nurses)
-        # 근무 횟수가 적은 간호사에게 추가 근무 할당
         for nurse_id, status in nurse_status.items():
             if status['total_shifts'] < avg_shifts_per_nurse:
-                status['off_count'] = 0  # 추가 근무를 위해 off 상태 해제
+                status['off_count'] = 0
             else:
-                status['off_count'] = 1  # 근무가 충분한 간호사는 잠시 배제
+                status['off_count'] = 1
 
     # 시프트 배정 로직
     def assign_shift_for_shift_type(current_date, available_nurses, shift_type, num_nurses_needed):
@@ -75,22 +76,18 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
     # 총 일수 동안 매일 스케줄을 생성
     for day_count in range(total_days):
         current_date = day_count + 1
-        is_weekend = current_date in weekends  # 주말 여부 확인
+        is_weekend = current_date in weekends
         num_day_evening_nurses = 2 if is_weekend else 3
         num_night_nurses = 2
 
-        # 휴가 중이 아닌 간호사 필터링
         available_nurses = [nurse for nurse in nurses if str(nurse['id']) not in vacation_days or current_date not in vacation_days[str(nurse['id'])]]
 
-        # 연속 근무일수 체크 및 연속 근무 제한 로직 적용
         balance_shifts()  # 불균형 해소를 위한 근무 횟수 균형 조정
 
-        # 휴무 상태 업데이트
         for nurse_id in nurse_status:
             if nurse_status[nurse_id]['off_count'] > 0:
                 nurse_status[nurse_id]['off_count'] -= 1
 
-        # 시프트 배정
         daily_schedule = []
         daily_schedule.extend(assign_shift_for_shift_type(current_date, available_nurses, 'day', num_day_evening_nurses))
         daily_schedule.extend(assign_shift_for_shift_type(current_date, available_nurses, 'evening', num_day_evening_nurses))
