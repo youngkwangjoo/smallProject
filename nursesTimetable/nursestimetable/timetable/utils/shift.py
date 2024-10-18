@@ -25,16 +25,29 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
     # 간호사가 특정 시프트에 배정될 수 있는지 확인하는 함수
     def is_available_for_shift(nurse_id, shift_type):
         nurse = nurse_status[nurse_id]
+        
+        # 간호사가 오프가 있는지 확인
         if nurse['off_count'] > 0:
             return False
+        
+        # 간호사가 이미 5일 연속으로 근무했는지 확인
         if nurse['consecutive_days'] >= 5:
             return False
-        if nurse['total_shifts'] >= total_work_days:  # 총 근무 횟수가 초과되지 않도록 제한
+        
+        # 총 근무 횟수가 초과되지 않도록 제한
+        if nurse['total_shifts'] >= total_work_days:
             return False
+        
+        # Evening 다음에 Day나 Night 시프트로 배정되는 것을 막기
         if shift_type == 'day' and nurse['last_shift'] == 'evening':
             return False
+        if shift_type == 'night' and nurse['last_shift'] == 'evening':
+            return False  # Evening 다음 Night는 불가능
+        
+        # Night 다음에 바로 Evening이 배정되지 않도록 추가 (일반적으로 필요한 경우)
         if shift_type == 'evening' and nurse['last_shift'] == 'night':
             return False
+
         return True
 
     # 사수 먼저 배정 후 부사수 및 나머지 배정
@@ -52,10 +65,11 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
         if senior_nurses:
             assigned_seniors = senior_nurses[:1]  # 근무가 가장 적은 사수 1명 선택
             assigned_nurses += assigned_seniors
+            already_assigned.add(assigned_seniors[0]['id'])  # 이미 배정된 간호사 기록
             remaining_nurses_needed = num_nurses_needed - 1  # 사수 1명 배정했으므로 나머지 인원 필요
 
             # 사수 배정된 간호사를 제외한 나머지 간호사 필터링
-            remaining_nurses = [nurse for nurse in available_nurses if nurse['id'] not in [s['id'] for s in assigned_seniors]]
+            remaining_nurses = [nurse for nurse in available_nurses if nurse['id'] not in already_assigned]
 
             # 3. 나머지 간호사들 중 근무 횟수가 적은 순으로 정렬 (사수 제외)
             all_nurses_sorted = sorted([nurse for nurse in remaining_nurses if is_available_for_shift(nurse['id'], shift_type)],
@@ -64,6 +78,8 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
             # 4. 나머지 근무 인원 배정 (근무가 적은 순으로 배정)
             assigned_others = all_nurses_sorted[:remaining_nurses_needed]
             assigned_nurses += assigned_others
+            for nurse in assigned_others:
+                already_assigned.add(nurse['id'])
 
         # 5. 배정된 간호사들 상태 업데이트
         for nurse in assigned_nurses:
