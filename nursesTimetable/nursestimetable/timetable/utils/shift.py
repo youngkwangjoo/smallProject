@@ -26,40 +26,37 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
     def is_available_for_shift(nurse_id, shift_type):
         nurse = nurse_status[nurse_id]
         
-        # 간호사가 오프가 있는지 확인
         if nurse['off_count'] > 0:
             return False
         
-        # 간호사가 이미 5일 연속으로 근무했는지 확인
         if nurse['consecutive_days'] >= 5:
             return False
         
-        # 총 근무 횟수가 초과되지 않도록 제한
         if nurse['total_shifts'] >= total_work_days:
             return False
         
-        # Evening 다음에 Day나 Night 시프트로 배정되는 것을 막기
+        # Evening 다음에 Day나 Night 시프트로 배정되지 않도록
         if shift_type == 'day' and nurse['last_shift'] == 'evening':
             return False
         if shift_type == 'night' and nurse['last_shift'] == 'evening':
-            return False  # Evening 다음 Night는 불가능
+            return False
         
-        # Night 다음에 바로 Evening이 배정되지 않도록 추가 (일반적으로 필요한 경우)
+        # Night 다음에 바로 Evening이 배정되지 않도록
         if shift_type == 'evening' and nurse['last_shift'] == 'night':
             return False
 
         return True
 
-    # 사수 먼저 배정 후 부사수 및 나머지 배정
+    # 시프트 간 균형 맞추기 로직
     def assign_shift_for_shift_type(current_date, available_nurses, shift_type, num_nurses_needed, already_assigned):
         daily_schedule = []
         assigned_nurses = []
 
-        # 1. 사수 중 근무 횟수가 적은 순으로 정렬
+        # 1. 사수 중 근무 횟수가 적고 해당 시프트에 적게 배정된 순으로 정렬
         senior_nurses = sorted([nurse for nurse in available_nurses if nurse_status[nurse['id']]['is_senior'] 
                                 and nurse['id'] not in already_assigned  # 이미 배정된 간호사는 제외
                                 and is_available_for_shift(nurse['id'], shift_type)],
-                                key=lambda x: nurse_status[x['id']][f'{shift_type}_shifts'])  # 해당 시프트 근무 횟수 기준으로 정렬
+                                key=lambda x: (nurse_status[x['id']][f'{shift_type}_shifts'], nurse_status[x['id']]['total_shifts']))  # 해당 시프트 + 전체 근무 횟수 기준으로 정렬
 
         # 2. 사수 중 근무 횟수가 가장 적은 사수 1명 배정
         if senior_nurses:
@@ -71,9 +68,9 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
             # 사수 배정된 간호사를 제외한 나머지 간호사 필터링
             remaining_nurses = [nurse for nurse in available_nurses if nurse['id'] not in already_assigned]
 
-            # 3. 나머지 간호사들 중 근무 횟수가 적은 순으로 정렬 (사수 제외)
+            # 3. 나머지 간호사들 중 해당 시프트에 적게 배정된 순으로 정렬
             all_nurses_sorted = sorted([nurse for nurse in remaining_nurses if is_available_for_shift(nurse['id'], shift_type)],
-                                       key=lambda x: nurse_status[x['id']]['total_shifts'])  # 총 근무 횟수 기준으로 정렬
+                                       key=lambda x: (nurse_status[x['id']][f'{shift_type}_shifts'], nurse_status[x['id']]['total_shifts']))  # 해당 시프트 + 전체 근무 횟수 기준으로 정렬
 
             # 4. 나머지 근무 인원 배정 (근무가 적은 순으로 배정)
             assigned_others = all_nurses_sorted[:remaining_nurses_needed]
@@ -114,7 +111,7 @@ def assign_shifts(nurses, total_days, holidays, vacation_days, total_off_days, t
             if nurse_status[nurse_id]['off_count'] > 0:
                 nurse_status[nurse_id]['off_count'] -= 1
 
-        # 시프트 배정 (근무 횟수가 적고, 사수와 부사수 균형 유지)
+        # 시프트 배정 (근무 횟수가 적고, 시프트 간 균형 유지)
         daily_schedule = []
         daily_schedule.extend(assign_shift_for_shift_type(current_date, available_nurses, 'day', num_day_evening_nurses, already_assigned))
         daily_schedule.extend(assign_shift_for_shift_type(current_date, available_nurses, 'evening', num_day_evening_nurses, already_assigned))
